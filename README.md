@@ -14,12 +14,24 @@ Specialty craft goods price & discovery app.
 
 ## Local Development
 
+### Prerequisites
+
+- Java 21+
+- Docker
+
+### Infrastructure
+
 ```bash
 docker-compose up
 ```
 
-Starts: PostgreSQL, API, Worker, Web (React dev server).
+Starts: PostgreSQL and Grafana LGTM (observability stack). The API, Worker, and Web services are run separately.
 
-## Design
+### Running the API
 
-See [docs/batchhawk design review.docx](docs/batchhawk%20design%20review.docx) for the full design review.
+```bash
+cd api
+./gradlew bootRun
+```
+
+> **Note:** `worker/` and `web/` are not yet active.
