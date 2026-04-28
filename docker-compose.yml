@@ -8,6 +8,15 @@ services:
     ports:
       - '5432:5432'
 
+  keycloak:
+    image: 'quay.io/keycloak/keycloak:26.2'
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - '8180:8080'
+
   grafana-lgtm:
     image: 'grafana/otel-lgtm:latest'
     ports:
