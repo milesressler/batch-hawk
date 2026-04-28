@@ -28,10 +28,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-  datasource:
-    url: jdbc:postgresql://localhost:5432/batchhawk
-    username: batchhawk
-    password: batchhawk
   security:
     oauth2:
       resourceserver:

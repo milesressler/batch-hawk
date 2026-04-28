@@ -3,6 +3,10 @@
 > This is a living document. Update it as architectural decisions are made, conventions are established,
 > or the plan evolves. For detailed decision records and topic-specific guidance, add files under `agents/`.
 
+## Design Document
+
+`batchhawk_design_review.docx` lives at the repo root and is the primary source of truth for product goals, domain model, and feature scope. It is excluded from git (`.gitignore` covers `*.docx`) — keep it local. When making architectural or feature decisions, consult it first.
+
 ## Project Overview
 
 Batch Hawk is a specialty craft goods price-discovery and browsing app. It is a multi-module Gradle monorepo.
@@ -19,7 +23,7 @@ batch-hawk/
 ├── agents/       # Agent decision records and guidance docs
 ├── Dockerfile    # Builds api/ jar into Corretto 25 image
 ├── buildspec.yml # AWS CodeBuild pipeline (ECR push)
-└── docker-compose.yml
+└── compose.yaml
 ```
 
 ## Tech Stack
@@ -42,16 +46,16 @@ batch-hawk/
 - **Rejected:** Auth0 (lock-in, cost at scale), AWS Cognito (no password hash export = hard lock-in), DIY username/password (would need to rebuild social login plumbing from scratch)
 - **Deployment:** Keycloak runs as a separate ECS service backed by Postgres (same RDS instance, separate schema or DB)
 - **api/ role:** Pure OAuth2 resource server — validates JWTs issued by Keycloak via `spring-boot-starter-oauth2-resource-server`
-- **Next step:** Add Keycloak to docker-compose for local dev, add `spring-boot-starter-oauth2-resource-server` to `api/build.gradle`, configure `issuer-uri` in `application.yaml`
+- **Status:** Implemented. Keycloak in `compose.yaml`, `spring-boot-starter-oauth2-resource-server` in `api/build.gradle`, `issuer-uri` configured in `application.yaml`.
 
 ### Local Dev
 ```bash
-docker-compose up   # starts PostgreSQL + Grafana LGTM observability stack
 ./gradlew :api:bootRun
 ```
 
-Docker compose provides:
-- PostgreSQL on port 5432 (db/user/pass: `batchhawk`)
+Spring Boot (`spring-boot-docker-compose`) auto-starts `compose.yaml` on boot and stops it on shutdown — no separate `docker-compose up` needed. Services provided:
+- PostgreSQL on port 5432 (db/user/pass: `batchhawk`) — datasource auto-configured
+- Keycloak on port 8180 — `batchhawk` realm and `batch-hawk-web` client auto-imported from `docker/keycloak/realms/batchhawk.json`
 - Grafana LGTM (Loki, Grafana, Tempo, Mimir) on port 3000; OTLP on 4317/4318
 
 ### CI/CD
@@ -68,7 +72,7 @@ Docker compose provides:
 - **OpenTelemetry-first observability:** Use structured logging and traces. The LGTM stack aggregates them locally.
 - **Security:** All endpoints require authentication by default unless explicitly configured otherwise.
 - **Tests:** JUnit 5 via `useJUnitPlatform()`. Run with `./gradlew :api:test`.
-- **application.yaml:** Multi-profile structure (default / dev / prod) in a single file using `---` separators. Dev profile connects to local Postgres (`localhost:5432`, creds `batchhawk/batchhawk`). Prod reads `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` from env vars.
+- **application.yaml:** Multi-profile structure (default / dev / prod) in a single file using `---` separators. Dev profile datasource is auto-configured by `spring-boot-docker-compose` (no hardcoded URL). Prod reads `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` from env vars.
 
 ## Key Gradle Commands
 
@@ -86,7 +90,7 @@ The `api` module is the active focus. High-level priorities (update as these evo
 1. Stand up core domain models and Flyway schema
 2. Implement REST endpoints for browse, search, and filter
 3. Add user account management
-4. **Wire up auth:** Add Keycloak to docker-compose, configure `api/` as resource server
+4. ~~Wire up auth~~ ✓ Keycloak wired as OAuth2 resource server; realm auto-imported via compose
 5. Activate `worker` module for AI-powered scraping and email monitoring
 6. Build out `web` (React + TypeScript, mobile-first) — Vite + Mantine, builds into `api/src/main/resources/static/`
 7. Provision infrastructure via `infra/` (Terraform on AWS: ECS, RDS, SES, SQS, S3)
