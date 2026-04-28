@@ -1,3 +1,61 @@
 spring:
   application:
-    name: service
+    name: batch-hawk
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    out-of-order: true
+
+server:
+  error:
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        include: health,info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  datasource:
+    url: jdbc:postgresql://localhost:5432/batchhawk
+    username: batchhawk
+    password: batchhawk
+
+management:
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,beans
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
