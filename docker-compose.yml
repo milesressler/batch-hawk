@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      POSTGRES_DB: batchhawk
+      POSTGRES_USER: batchhawk
+      POSTGRES_PASSWORD: batchhawk
+    ports:
+      - '5432:5432'
+
+  grafana-lgtm:
+    image: 'grafana/otel-lgtm:latest'
+    ports:
+      - '3000:3000'
+      - '4317:4317'
+      - '4318:4318'
