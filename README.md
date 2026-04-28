@@ -25,7 +25,24 @@ Specialty craft goods price & discovery app.
 docker-compose up
 ```
 
-Starts: PostgreSQL and Grafana LGTM (observability stack). The API, Worker, and Web services are run separately.
+Starts: PostgreSQL, Keycloak, and Grafana LGTM (observability stack). The API, Worker, and Web services are run separately.
+
+| Service | URL |
+|---------|-----|
+| Keycloak Admin UI | http://localhost:8180 |
+| Grafana | http://localhost:3000 |
+
+### Keycloak Setup (first time only)
+
+Keycloak runs in `start-dev` mode with an in-memory database, so this setup must be repeated if the container is recreated.
+
+1. Open http://localhost:8180 and log in with `admin` / `admin`
+2. Create a new realm named **`batchhawk`**
+3. Within the `batchhawk` realm, create a client:
+   - **Client ID**: `batch-hawk-web` (or whatever the calling client is)
+   - **Client authentication**: off (public client) for the web frontend
+   - Set appropriate redirect URIs for your environment
+4. Start the API — it fetches the OIDC discovery document from Keycloak on startup and **will fail to start** if Keycloak is not running or the `batchhawk` realm does not exist.
 
 ### Running the API
 
