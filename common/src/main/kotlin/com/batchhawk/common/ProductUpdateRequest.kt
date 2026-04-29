@@ -6,6 +6,7 @@ data class ProductUpdateRequest(
     val bagSize: Int?,
     val bagUnit: String?,
     val roastLevel: String?,
+    val productType: String?,
     val originCountry: String?,
     val originRegion: String?,
     val process: String?,
