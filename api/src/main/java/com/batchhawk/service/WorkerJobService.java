@@ -14,10 +14,15 @@ import com.batchhawk.data.repository.ProductRepository;
 import com.batchhawk.data.repository.RoasterRepository;
 import com.batchhawk.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +35,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WorkerJobService {
 
+    private static final Logger log = LoggerFactory.getLogger(WorkerJobService.class);
+
     private final RoasterRepository roasterRepository;
     private final AgentRunRepository agentRunRepository;
     private final ProductRepository productRepository;
@@ -37,6 +44,9 @@ public class WorkerJobService {
 
     @Value("${batchhawk.refresh-interval-hours:24}")
     private int refreshIntervalHours;
+
+    @Value("${batchhawk.max-run-minutes:10}")
+    private int maxRunMinutes;
 
     @Transactional(noRollbackFor = DataIntegrityViolationException.class)
     public Optional<NextJobResponse> claimNextJob() {
@@ -61,6 +71,22 @@ public class WorkerJobService {
         agentRunRepository.save(run);
 
         request.getProducts().forEach(product -> upsertProduct(run, product, now));
+    }
+
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
+    @Transactional
+    public void expireStaleRuns() {
+        final var cutoff = Instant.now().minus(maxRunMinutes, ChronoUnit.MINUTES);
+        final var stale = agentRunRepository.findByStatusAndStartedAtBefore(AgentRunStatus.IN_PROGRESS, cutoff);
+        if (stale.isEmpty()) return;
+
+        log.warn("Expiring {} stale agent run(s) older than {} minutes", stale.size(), maxRunMinutes);
+        stale.forEach(run -> {
+            run.setStatus(AgentRunStatus.FAILED);
+            run.setCompletedAt(Instant.now());
+            run.setFeedbackNotes("Expired: exceeded max run time of " + maxRunMinutes + " minutes");
+        });
+        agentRunRepository.saveAll(stale);
     }
 
     private NextJobResponse createRunForRoaster(final Roaster roaster) {
