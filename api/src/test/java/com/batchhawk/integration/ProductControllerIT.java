@@ -99,7 +99,7 @@ class ProductControllerIT extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/products").with(jwt()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content[0].roasterName").value("Onyx Coffee Lab"));
+            .andExpect(jsonPath("$.content[0].roaster.name").value("Onyx Coffee Lab"));
     }
 
     @Test

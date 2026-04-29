@@ -31,9 +31,29 @@ Spring Boot automatically starts the required infrastructure (PostgreSQL, Keyclo
 | Service | URL |
 |---------|-----|
 | API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
 | Keycloak Admin UI | http://localhost:8180 |
 | Grafana | http://localhost:3000 |
 
 The `batchhawk` Keycloak realm and `batch-hawk-web` client are imported automatically from `docker/keycloak/realms/batchhawk.json` on first start.
 
-> **Note:** `worker/` and `web/` are not yet active.
+### Running the Frontend
+
+```bash
+cd web && npm install && npm run dev
+```
+
+Add a `web/.env.local` with:
+```
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+### API Contract Sync
+
+The frontend TypeScript types are generated from the backend's OpenAPI spec. After making API changes (new endpoints, changed response shapes), regenerate the client types:
+
+```bash
+./gradlew :api:generateClientTypes
+```
+
+This boots the app against a testcontainers Postgres instance, captures the OpenAPI spec, generates `web/src/api-types.ts`, then shuts down. Commit the updated `api-types.ts` alongside your API changes.

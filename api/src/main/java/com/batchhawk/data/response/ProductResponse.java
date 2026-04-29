@@ -1,16 +1,18 @@
 package com.batchhawk.data.response;
 
 import com.batchhawk.data.entity.product.Product;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 public record ProductResponse(
-    UUID id,
-    UUID roasterId,
-    String roasterName,
-    String name,
+    @Schema(requiredMode = REQUIRED) UUID id,
+    @Schema(requiredMode = REQUIRED) RoasterResponse roaster,
+    @Schema(requiredMode = REQUIRED) String name,
     String roastLevel,
     String productType,
     String originCountry,
@@ -18,18 +20,17 @@ public record ProductResponse(
     String process,
     List<String> brewMethods,
     List<String> flavorProfile,
-    boolean decaf,
+    @Schema(requiredMode = REQUIRED) boolean decaf,
     String availabilityType,
     String description,
-    boolean active,
-    Instant createdAt,
-    Instant updatedAt
+    @Schema(requiredMode = REQUIRED) boolean active,
+    @Schema(requiredMode = REQUIRED) Instant createdAt,
+    @Schema(requiredMode = REQUIRED) Instant updatedAt
 ) {
     public static ProductResponse from(final Product p) {
         return new ProductResponse(
             p.getId(),
-            p.getRoaster().getId(),
-            p.getRoaster().getName(),
+            RoasterResponse.from(p.getRoaster()),
             p.getName(),
             p.getRoastLevel(),
             p.getProductType(),

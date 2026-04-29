@@ -1,6 +1,28 @@
 plugins {
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
+    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+}
+
+openApi {
+    outputDir = file("${rootDir}/web")
+    outputFileName = "openapi.json"
+    customBootRun {
+        mainClass = "com.batchhawk.TestBatchHawkApplication"
+        classpath = sourceSets.test.runtimeClasspath
+    }
+}
+
+tasks.named('forkedSpringBootRun') {
+    dependsOn testClasses
+}
+
+tasks.register('generateClientTypes', Exec) {
+    group = 'openapi'
+    description = 'Generates TypeScript API types from the OpenAPI spec'
+    dependsOn 'generateOpenApiDocs'
+    workingDir = file("${rootDir}/web")
+    commandLine 'npm', 'run', 'generate:api'
 }
 
 bootJar {

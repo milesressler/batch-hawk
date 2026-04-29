@@ -38,7 +38,7 @@ batch-hawk/
 - **Observability:** OpenTelemetry (`spring-boot-starter-opentelemetry`), Micrometer datasource tracing
 - **Boilerplate:** Lombok (`@Data`, `@Builder`, etc.)
 - **Root package:** `com.batchhawk`
-- **Main class:** `com.batchhawk.service.BatchHawkDaemon`
+- **Main class:** `com.batchhawk.BatchHawkApplication`
 
 ### Authentication — Keycloak (DECIDED, not yet implemented)
 - **Decision:** Use Keycloak as a self-hosted OIDC/OAuth2 authorization server
@@ -77,11 +77,44 @@ Spring Boot (`spring-boot-docker-compose`) auto-starts `compose.yaml` on boot an
 ## Key Gradle Commands
 
 ```bash
-./gradlew :api:build          # compile + test
-./gradlew :api:test           # run tests only
-./gradlew :api:bootRun        # run locally
-./gradlew :api:bootJar        # build executable jar (outputs batch-hawk-{version}.jar)
+./gradlew :api:build                    # compile + test
+./gradlew :api:test                     # run tests only
+./gradlew :api:bootRun                  # run locally
+./gradlew :api:bootJar                  # build executable jar (outputs batch-hawk-{version}.jar)
+./gradlew :api:generateClientTypes      # regenerate frontend TypeScript types from OpenAPI spec
 ```
+
+## API Contract Sync
+
+The frontend TypeScript types (`web/src/api-types.ts`) are generated from the backend's OpenAPI spec. After any API change (new endpoint, changed response DTO), run:
+
+```bash
+./gradlew :api:generateClientTypes
+```
+
+This boots `TestBatchHawkApplication` (testcontainers Postgres + no-op `JwtDecoder` via `LocalDevSecurityConfig`), captures `/v3/api-docs`, writes `web/openapi.json`, runs `npm run generate:api` to produce `web/src/api-types.ts`, then shuts down.
+
+Always commit the updated `api-types.ts` alongside the API change. `openapi.json` is gitignored (build artifact).
+
+- Required response fields are annotated `@Schema(requiredMode = REQUIRED)` on the Java record — this drives non-optional types in the generated TypeScript.
+- Swagger UI: http://localhost:8080/swagger-ui.html (no auth required)
+- OpenAPI spec: http://localhost:8080/v3/api-docs
+
+## Frontend (web/)
+
+```bash
+cd web && npm install && npm run dev    # dev server at http://localhost:5173
+```
+
+Add `web/.env.local`:
+```
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+Key files:
+- `web/src/services/client.ts` — openapi-fetch typed client; call `setTokenGetter()` once Keycloak auth is wired in the frontend
+- `web/src/services/roastersApi.ts`, `productsApi.ts` — per-resource service functions
+- TanStack Query (`@tanstack/react-query`) is the data-fetching layer; `QueryClientProvider` is in `main.tsx`
 
 ## Current Plan / Roadmap
 
@@ -92,7 +125,7 @@ The `api` module is the active focus. High-level priorities (update as these evo
 3. Add user account management
 4. ~~Wire up auth~~ ✓ Keycloak wired as OAuth2 resource server; realm auto-imported via compose
 5. Activate `worker` module for AI-powered scraping and email monitoring
-6. Build out `web` (React + TypeScript, mobile-first) — Vite + Mantine, builds into `api/src/main/resources/static/`
+6. ~~Build out `web`~~ ✓ React + TypeScript (Vite), TanStack Query, openapi-fetch typed client wired against generated OpenAPI types
 7. Provision infrastructure via `infra/` (Terraform on AWS: ECS, RDS, SES, SQS, S3)
 
 See `agents/` for decision records and module-specific guidance as they are added.
