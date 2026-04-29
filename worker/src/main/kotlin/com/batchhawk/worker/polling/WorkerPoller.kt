@@ -1,7 +1,7 @@
 package com.batchhawk.worker.polling
 
-import com.batchhawk.worker.client.CompleteRunRequest
-import com.batchhawk.worker.client.NextJobResponse
+import com.batchhawk.common.CompleteRunRequest
+import com.batchhawk.common.NextJobResponse
 import com.batchhawk.worker.client.WorkerApiClient
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

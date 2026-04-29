@@ -1,5 +1,6 @@
 package com.batchhawk.data.entity.observation;
 
+import com.batchhawk.common.ScrapedField;
 import com.batchhawk.data.entity.BaseEntity;
 import com.batchhawk.data.entity.roaster.Roaster;
 import com.batchhawk.data.enums.ObservationSource;
@@ -27,8 +28,9 @@ public class FieldObservation extends BaseEntity {
     @JoinColumn(name = "roaster_id", nullable = false)
     private Roaster roaster;
 
-    @Column(name = "field_name", nullable = false, length = 100)
-    private String fieldName;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "field_name", nullable = false, length = 50)
+    private ScrapedField fieldName;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

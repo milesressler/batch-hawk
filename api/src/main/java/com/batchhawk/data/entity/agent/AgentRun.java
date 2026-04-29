@@ -1,5 +1,6 @@
 package com.batchhawk.data.entity.agent;
 
+import com.batchhawk.common.ScrapedField;
 import com.batchhawk.data.entity.BaseEntity;
 import com.batchhawk.data.entity.roaster.Roaster;
 import com.batchhawk.data.enums.AgentRunStatus;
@@ -36,11 +37,11 @@ public class AgentRun extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "fields_attempted", columnDefinition = "text[]")
-    private List<String> fieldsAttempted;
+    private List<ScrapedField> fieldsAttempted;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "fields_found", columnDefinition = "text[]")
-    private List<String> fieldsFound;
+    private List<ScrapedField> fieldsFound;
 
     @Column(name = "feedback_notes", columnDefinition = "text")
     private String feedbackNotes;

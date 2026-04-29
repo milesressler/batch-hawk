@@ -1,5 +1,7 @@
 package com.batchhawk.worker.client
 
+import com.batchhawk.common.CompleteRunRequest
+import com.batchhawk.common.NextJobResponse
 import com.batchhawk.worker.config.WorkerProperties
 import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
