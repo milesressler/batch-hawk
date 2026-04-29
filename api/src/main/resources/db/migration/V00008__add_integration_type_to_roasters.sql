@@ -1,0 +1,2 @@
+ALTER TABLE roasters
+    ADD COLUMN integration_type VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN';

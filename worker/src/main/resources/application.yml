@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: batch-hawk-worker
+
+batchhawk:
+  worker:
+    api-base-url: ${WORKER_API_BASE_URL:http://localhost:8080}
+    api-secret: ${WORKER_API_SECRET}
+    poll-interval-minutes: 15
+    refresh-interval-hours: 24
+    max-run-minutes: 10
