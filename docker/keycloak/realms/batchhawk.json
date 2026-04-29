@@ -7,6 +7,16 @@
   "resetPasswordAllowed": true,
   "clients": [
     {
+      "clientId": "batch-hawk-worker",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "worker-local-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
       "clientId": "batch-hawk-web",
       "enabled": true,
       "publicClient": true,

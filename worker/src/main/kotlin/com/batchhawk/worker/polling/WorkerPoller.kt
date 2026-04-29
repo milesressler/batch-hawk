@@ -33,7 +33,7 @@ class WorkerPoller(private val apiClient: WorkerApiClient) {
             log.error("Job failed runId={}", job.runId, e)
             apiClient.completeRun(
                 job.runId.toString(),
-                CompleteRunRequest("FAILED", emptyList(), emptyList(), e.message, null),
+                CompleteRunRequest("FAILED", emptyList(), e.message),
             )
         }
     }

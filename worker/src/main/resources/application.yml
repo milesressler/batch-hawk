@@ -2,10 +2,23 @@ spring:
   application:
     name: batch-hawk-worker
 
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: batch-hawk-worker
+            client-secret: ${WORKER_CLIENT_SECRET:worker-local-secret}
+            authorization-grant-type: client_credentials
+            scope: openid
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/batchhawk}
+
 batchhawk:
   worker:
     api-base-url: ${WORKER_API_BASE_URL:http://localhost:8080}
-    api-secret: ${WORKER_API_SECRET}
     poll-interval-minutes: 15
     refresh-interval-hours: 24
     max-run-minutes: 10

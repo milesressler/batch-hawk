@@ -9,7 +9,6 @@ import org.springframework.validation.annotation.Validated
 @ConfigurationProperties(prefix = "batchhawk.worker")
 data class WorkerProperties(
     @field:NotBlank val apiBaseUrl: String,
-    @field:NotBlank val apiSecret: String,
     @field:Positive val pollIntervalMinutes: Int,
     @field:Positive val refreshIntervalHours: Int,
     @field:Positive val maxRunMinutes: Int,

@@ -2,31 +2,23 @@ package com.batchhawk.worker.client
 
 import com.batchhawk.common.CompleteRunRequest
 import com.batchhawk.common.NextJobResponse
-import com.batchhawk.worker.config.WorkerProperties
 import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
 @Component
-class WorkerApiClient(
-    private val webClientBuilder: WebClient.Builder,
-    private val props: WorkerProperties,
-) {
-    private fun client(): WebClient = webClientBuilder
-        .baseUrl(props.apiBaseUrl)
-        .defaultHeader("X-Worker-Secret", props.apiSecret)
-        .build()
+class WorkerApiClient(private val workerWebClient: WebClient) {
 
-    fun claimNextJob(): NextJobResponse? = client().get()
-        .uri("/internal/worker/next-job")
+    fun claimNextJob(): NextJobResponse? = workerWebClient.post()
+        .uri("/internal/worker/jobs")
         .retrieve()
         .onStatus(HttpStatusCode::is4xxClientError) { Mono.empty() }
         .bodyToMono(NextJobResponse::class.java)
         .block()
 
     fun completeRun(runId: String, request: CompleteRunRequest) {
-        client().post()
+        workerWebClient.post()
             .uri("/internal/worker/runs/{runId}/complete", runId)
             .bodyValue(request)
             .retrieve()
