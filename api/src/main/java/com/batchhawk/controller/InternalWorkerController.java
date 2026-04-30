@@ -8,8 +8,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/internal/worker")
 @RequiredArgsConstructor
@@ -31,7 +29,7 @@ public class InternalWorkerController {
 
     @PostMapping("/runs/{runId}/complete")
     public ResponseEntity<Void> completeRun(
-            @PathVariable final UUID runId,
+            @PathVariable final Long runId,
             @RequestBody final CompleteRunRequest request) {
         workerJobService.completeRun(runId, request);
         return ResponseEntity.ok().build();

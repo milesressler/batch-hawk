@@ -3,6 +3,7 @@ package com.batchhawk.service;
 import com.batchhawk.common.CompleteRunRequest;
 import com.batchhawk.common.NextJobResponse;
 import com.batchhawk.common.ProductUpdateRequest;
+import com.batchhawk.common.RoasterUpdateRequest;
 import com.batchhawk.data.entity.agent.AgentRun;
 import com.batchhawk.data.entity.observation.ProductObservation;
 import com.batchhawk.data.entity.product.Product;
@@ -29,7 +30,6 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +60,7 @@ public class WorkerJobService {
     }
 
     @Transactional
-    public void completeRun(final UUID runId, final CompleteRunRequest request) {
+    public void completeRun(final Long runId, final CompleteRunRequest request) {
         final var run = agentRunRepository.findById(runId)
                 .orElseThrow(() -> new EntityNotFoundException("AgentRun", runId));
 
@@ -69,6 +69,9 @@ public class WorkerJobService {
         run.setCompletedAt(now);
         run.setFeedbackNotes(request.getNotes());
         agentRunRepository.save(run);
+
+        Optional.ofNullable(request.getRoasterUpdate())
+                .ifPresent(update -> applyRoasterUpdate(run.getRoaster(), update));
 
         request.getProducts().forEach(product -> upsertProduct(run, product, now));
     }
@@ -87,6 +90,13 @@ public class WorkerJobService {
             run.setFeedbackNotes("Expired: exceeded max run time of " + maxRunMinutes + " minutes");
         });
         agentRunRepository.saveAll(stale);
+    }
+
+    private void applyRoasterUpdate(final Roaster roaster, final RoasterUpdateRequest update) {
+        Optional.ofNullable(update.getCity()).ifPresent(roaster::setCity);
+        Optional.ofNullable(update.getState()).ifPresent(roaster::setState);
+        Optional.ofNullable(update.getLogoUrl()).ifPresent(roaster::setLogoUrl);
+        roasterRepository.save(roaster);
     }
 
     private NextJobResponse createRunForRoaster(final Roaster roaster) {
@@ -147,6 +157,8 @@ public class WorkerJobService {
                 .ifPresent(obs::setPriceUsd);
 
         Optional.ofNullable(update.getBagSize()).ifPresent(size -> {
+            obs.setBagSize(size);
+            obs.setBagSizeUnit(update.getBagUnit());
             final var bagSizeOz = toOz(size, update.getBagUnit());
             obs.setBagSizeOz(bagSizeOz);
             if (obs.getPriceUsd() != null && bagSizeOz.compareTo(BigDecimal.ZERO) > 0) {

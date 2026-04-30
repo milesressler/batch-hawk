@@ -21,7 +21,7 @@ batch-hawk/
 ├── infra/        # Terraform (ECS, RDS, SES, SQS, S3, IAM) (placeholder)
 ├── shared/       # Shared domain models (placeholder)
 ├── agents/       # Agent decision records and guidance docs
-├── Dockerfile    # Builds api/ jar into Corretto 25 image
+├── Dockerfile    # Builds api/ jar into Corretto 21 image
 ├── buildspec.yml # AWS CodeBuild pipeline (ECR push)
 └── compose.yaml
 ```
@@ -29,7 +29,7 @@ batch-hawk/
 ## Tech Stack
 
 ### api/ (Spring Boot)
-- **Language:** Java 25
+- **Language:** Java 21
 - **Framework:** Spring Boot 4.0.6
 - **Build:** Gradle 9.x (multi-module)
 - **Database:** PostgreSQL via Spring Data JPA + Flyway migrations
@@ -61,7 +61,7 @@ Spring Boot (`spring-boot-docker-compose`) auto-starts `compose.yaml` on boot an
 ### CI/CD
 - `buildspec.yml` — AWS CodeBuild. Requires `REPOSITORY_URI` env var set in the CodeBuild project pointing to the ECR repo.
 - Builds `./gradlew :api:build :api:bootJar`, produces `api/build/libs/batch-hawk-{version}.jar`
-- Docker image uses `public.ecr.aws/amazoncorretto/amazoncorretto:25`
+- Docker image uses `public.ecr.aws/amazoncorretto/amazoncorretto:21`
 
 ## Development Conventions
 

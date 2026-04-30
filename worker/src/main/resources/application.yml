@@ -1,8 +1,6 @@
 spring:
   application:
     name: batch-hawk-worker
-
-spring:
   security:
     oauth2:
       client:
@@ -19,6 +17,16 @@ spring:
 batchhawk:
   worker:
     api-base-url: ${WORKER_API_BASE_URL:http://localhost:8080}
-    poll-interval-minutes: 15
+    poll-interval-seconds: 600
     refresh-interval-hours: 24
     max-run-minutes: 10
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+batchhawk:
+  worker:
+    poll-interval-seconds: 25

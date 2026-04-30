@@ -50,3 +50,6 @@ out/
 
 # Design docs (keep local only)
 *.docx
+
+### Secrets ###
+**/application-dev.yml

@@ -45,4 +45,13 @@ public class Roaster extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "integration_type", nullable = false, length = 20)
     private IntegrationType integrationType = IntegrationType.UNKNOWN;
+
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 100)
+    private String state;
+
+    @Column(name = "logo_url", length = 512)
+    private String logoUrl;
 }

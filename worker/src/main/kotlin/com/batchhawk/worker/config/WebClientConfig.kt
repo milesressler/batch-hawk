@@ -1,41 +1,59 @@
 package com.batchhawk.worker.config
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction
+import org.springframework.http.codec.json.Jackson2JsonDecoder
+import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
+import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.InMemoryReactiveClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
+import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
 class WebClientConfig(private val props: WorkerProperties) {
 
     @Bean
-    fun authorizedClientManager(
-        clientRegistrationRepository: ClientRegistrationRepository,
-        authorizedClientService: OAuth2AuthorizedClientService,
-    ): OAuth2AuthorizedClientManager {
-        val provider = OAuth2AuthorizedClientProviderBuilder.builder()
-            .clientCredentials()
-            .build()
-        return AuthorizedClientServiceOAuth2AuthorizedClientManager(
-            clientRegistrationRepository, authorizedClientService,
-        ).also { it.setAuthorizedClientProvider(provider) }
+    fun reactiveClientRegistrationRepository(
+        clientRegistrationRepository: InMemoryClientRegistrationRepository,
+    ): ReactiveClientRegistrationRepository =
+        InMemoryReactiveClientRegistrationRepository(clientRegistrationRepository.toList())
+
+    @Bean
+    fun reactiveAuthorizedClientManager(
+        reactiveClientRegistrationRepository: ReactiveClientRegistrationRepository,
+    ): ReactiveOAuth2AuthorizedClientManager {
+        val service = InMemoryReactiveOAuth2AuthorizedClientService(reactiveClientRegistrationRepository)
+        return AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
+            reactiveClientRegistrationRepository, service,
+        )
     }
+
+    @Bean
+    fun externalWebClient(builder: WebClient.Builder): WebClient =
+        builder.codecs { it.defaultCodecs().maxInMemorySize(2 * 1024 * 1024) }.build()
+
+    @Bean
+    fun objectMapper(): ObjectMapper = ObjectMapper().registerKotlinModule()
 
     @Bean
     fun workerWebClient(
         builder: WebClient.Builder,
-        authorizedClientManager: OAuth2AuthorizedClientManager,
+        objectMapper: ObjectMapper,
+        reactiveAuthorizedClientManager: ReactiveOAuth2AuthorizedClientManager,
     ): WebClient {
-        val oauth2 = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+        val oauth2 = ServerOAuth2AuthorizedClientExchangeFilterFunction(reactiveAuthorizedClientManager)
         oauth2.setDefaultClientRegistrationId("keycloak")
         return builder
             .baseUrl(props.apiBaseUrl)
-            .apply(oauth2.oauth2Configuration())
+            .filter(oauth2)
+            .codecs { it.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper)) }
+            .codecs { it.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper)) }
             .build()
     }
 }

@@ -7,9 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface ProductObservationRepository extends JpaRepository<ProductObservation, UUID> {
+public interface ProductObservationRepository extends JpaRepository<ProductObservation, Long> {
 
     // Most recent observation per product (used for current pricing display)
     @Query(value = """
@@ -18,7 +17,7 @@ public interface ProductObservationRepository extends JpaRepository<ProductObser
         WHERE product_id = :productId
         ORDER BY product_id, observed_at DESC
         """, nativeQuery = true)
-    Optional<ProductObservation> findLatestByProductId(@Param("productId") UUID productId);
+    Optional<ProductObservation> findLatestByProductId(@Param("productId") Long productId);
 
     @Query(value = """
         SELECT DISTINCT ON (product_id) *
@@ -26,5 +25,5 @@ public interface ProductObservationRepository extends JpaRepository<ProductObser
         WHERE product_id IN (:productIds)
         ORDER BY product_id, observed_at DESC
         """, nativeQuery = true)
-    List<ProductObservation> findLatestByProductIds(@Param("productIds") List<UUID> productIds);
+    List<ProductObservation> findLatestByProductIds(@Param("productIds") List<Long> productIds);
 }

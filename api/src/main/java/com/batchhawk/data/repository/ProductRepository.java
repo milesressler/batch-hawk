@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
-    Optional<Product> findByRoasterIdAndNameIgnoreCase(UUID roasterId, String name);
+    Optional<Product> findByUuid(UUID uuid);
+
+    Optional<Product> findByRoasterIdAndNameIgnoreCase(Long roasterId, String name);
 }

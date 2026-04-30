@@ -13,9 +13,12 @@ import java.util.UUID;
 public abstract class BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(updatable = false, nullable = false)
+    private Long id;
+
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false, unique = true)
+    private UUID uuid;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -25,6 +28,7 @@ public abstract class BaseEntity {
 
     @PrePersist
     void prePersist() {
+        if (uuid == null) uuid = UUID.randomUUID();
         createdAt = updatedAt = Instant.now();
     }
 

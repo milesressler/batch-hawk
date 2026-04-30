@@ -27,7 +27,7 @@ public class RoasterService {
     public Page<RoasterResponse> list(final String name, final boolean activeOnly, final Pageable pageable) {
         final var spec = Stream.<Optional<Specification<Roaster>>>of(
             Optional.ofNullable(name).filter(Predicate.not(String::isBlank)).map(RoasterSpec::nameContains),
-            Optional.of(activeOnly).filter(Boolean::booleanValue).map(_ -> RoasterSpec.isActive(true))
+            Optional.of(activeOnly).filter(Boolean::booleanValue).map(ignored -> RoasterSpec.isActive(true))
         )
         .flatMap(Optional::stream)
         .reduce(Specification::and)
@@ -37,9 +37,9 @@ public class RoasterService {
     }
 
     @Transactional(readOnly = true)
-    public RoasterResponse getById(final UUID id) {
-        return roasterRepository.findById(id)
+    public RoasterResponse getById(final UUID uuid) {
+        return roasterRepository.findByUuid(uuid)
             .map(RoasterResponse::from)
-            .orElseThrow(() -> new EntityNotFoundException("Roaster", id));
+            .orElseThrow(() -> new EntityNotFoundException("Roaster", uuid));
     }
 }

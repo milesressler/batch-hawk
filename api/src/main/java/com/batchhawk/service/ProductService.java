@@ -28,7 +28,7 @@ public class ProductService {
         final var spec = Stream.<Optional<Specification<Product>>>of(
             Optional.ofNullable(roasterId).map(ProductSpec::forRoaster),
             Optional.ofNullable(name).filter(Predicate.not(String::isBlank)).map(ProductSpec::nameContains),
-            Optional.of(activeOnly).filter(Boolean::booleanValue).map(_ -> ProductSpec.isActive(true))
+            Optional.of(activeOnly).filter(Boolean::booleanValue).map(ignored -> ProductSpec.isActive(true))
         )
         .flatMap(Optional::stream)
         .reduce(Specification::and)
@@ -38,9 +38,9 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductResponse getById(final UUID id) {
-        return productRepository.findById(id)
+    public ProductResponse getById(final UUID uuid) {
+        return productRepository.findByUuid(uuid)
             .map(ProductResponse::from)
-            .orElseThrow(() -> new EntityNotFoundException("Product", id));
+            .orElseThrow(() -> new EntityNotFoundException("Product", uuid));
     }
 }

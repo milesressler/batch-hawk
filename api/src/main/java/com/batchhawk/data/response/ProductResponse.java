@@ -29,7 +29,7 @@ public record ProductResponse(
 ) {
     public static ProductResponse from(final Product p) {
         return new ProductResponse(
-            p.getId(),
+            p.getUuid(),
             RoasterResponse.from(p.getRoaster()),
             p.getName(),
             p.getRoastLevel(),

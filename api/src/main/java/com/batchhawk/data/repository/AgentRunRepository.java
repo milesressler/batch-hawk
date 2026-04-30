@@ -8,9 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
-public interface AgentRunRepository extends JpaRepository<AgentRun, UUID> {
+public interface AgentRunRepository extends JpaRepository<AgentRun, Long> {
 
     @Query("SELECT ar FROM AgentRun ar WHERE ar.status = :status AND ar.startedAt < :cutoff")
     List<AgentRun> findByStatusAndStartedAtBefore(

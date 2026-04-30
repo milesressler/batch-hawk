@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,22 +33,24 @@ class ProductServiceTest {
     @Test
     void getById_returnsMappedResponse_whenFound() {
         final var product = product("Ethiopia Guji");
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        final var uuid = UUID.randomUUID();
+        ReflectionTestUtils.setField(product, "uuid", uuid);
+        when(productRepository.findByUuid(uuid)).thenReturn(Optional.of(product));
 
-        final var response = productService.getById(product.getId());
+        final var response = productService.getById(uuid);
 
         assertThat(response.name()).isEqualTo("Ethiopia Guji");
-        assertThat(response.id()).isEqualTo(product.getId());
+        assertThat(response.id()).isEqualTo(uuid);
     }
 
     @Test
     void getById_throwsEntityNotFoundException_whenNotFound() {
-        final var id = UUID.randomUUID();
-        when(productRepository.findById(id)).thenReturn(Optional.empty());
+        final var uuid = UUID.randomUUID();
+        when(productRepository.findByUuid(uuid)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> productService.getById(id))
+        assertThatThrownBy(() -> productService.getById(uuid))
             .isInstanceOf(EntityNotFoundException.class)
-            .hasMessageContaining(id.toString());
+            .hasMessageContaining(uuid.toString());
     }
 
     @Test

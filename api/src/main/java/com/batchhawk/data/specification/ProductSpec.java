@@ -9,7 +9,7 @@ public class ProductSpec {
 
     public static Specification<Product> forRoaster(final UUID roasterId) {
         return (root, query, cb) ->
-            cb.equal(root.get("roaster").get("id"), roasterId);
+            cb.equal(root.get("roaster").get("uuid"), roasterId);
     }
 
     public static Specification<Product> nameContains(final String name) {

@@ -10,7 +10,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -24,6 +23,12 @@ public class ProductObservation extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @Column(name = "bag_size")
+    private Integer bagSize;
+
+    @Column(name = "bag_size_unit", length = 10)
+    private String bagSizeUnit;
 
     @Column(name = "bag_size_oz", precision = 6, scale = 2)
     private BigDecimal bagSizeOz;
@@ -45,5 +50,5 @@ public class ProductObservation extends BaseEntity {
     private Instant observedAt;
 
     @Column(name = "agent_run_id")
-    private UUID agentRunId;
+    private Long agentRunId;
 }

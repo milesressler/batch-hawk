@@ -13,7 +13,6 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -47,5 +46,5 @@ public class FieldObservation extends BaseEntity {
     private BigDecimal confidence;
 
     @Column(name = "agent_run_id")
-    private UUID agentRunId;
+    private Long agentRunId;
 }
