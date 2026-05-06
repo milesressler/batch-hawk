@@ -5,4 +5,7 @@ data class CompleteRunRequest(
     val products: List<ProductUpdateRequest>,
     val notes: String?,
     val roasterUpdate: RoasterUpdateRequest? = null,
+    val inputTokens: Long? = null,
+    val outputTokens: Long? = null,
+    val siteHints: String? = null,
 )

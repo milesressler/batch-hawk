@@ -68,8 +68,14 @@ public class WorkerJobService {
         run.setStatus(AgentRunStatus.valueOf(request.getStatus()));
         run.setCompletedAt(now);
         run.setFeedbackNotes(request.getNotes());
+        Optional.ofNullable(request.getInputTokens()).ifPresent(run::setInputTokens);
+        Optional.ofNullable(request.getOutputTokens()).ifPresent(run::setOutputTokens);
         agentRunRepository.save(run);
 
+        Optional.ofNullable(request.getSiteHints()).ifPresent(hints -> {
+            run.getRoaster().setUrlHints(hints);
+            roasterRepository.save(run.getRoaster());
+        });
         Optional.ofNullable(request.getRoasterUpdate())
                 .ifPresent(update -> applyRoasterUpdate(run.getRoaster(), update));
 

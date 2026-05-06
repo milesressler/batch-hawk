@@ -1,6 +1,10 @@
 spring:
   application:
     name: batch-hawk
+
+logging:
+  pattern:
+    level: "%5p"
   jpa:
     properties:
       hibernate:

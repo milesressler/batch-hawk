@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+
+/* Override the blue top-bar accent */
+:root {
+  --keycloak-card-top-color: #ffa000;
+}
+
+/* Page background */
+body,
+.pf-v5-c-login {
+  background: #fdf6ed !important;
+}
+
+/* Realm name in header */
+#kc-header-wrapper {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-weight: 700 !important;
+  font-size: 2rem !important;
+  color: #2c1810 !important;
+}
+
+/* "Sign in to your account" title */
+#kc-page-title {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-weight: 600 !important;
+}
+
+/* Login card */
+.pf-v5-c-login__main {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+}
+
+/* Primary button */
+.pf-v5-c-button.pf-m-primary {
+  background-color: #ffa000 !important;
+  border-color: #ffa000 !important;
+  color: #1a1a1a !important;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+  background-color: #ff8f00 !important;
+  border-color: #ff8f00 !important;
+}
+
+/* Links */
+a:not(.pf-v5-c-button) {
+  color: #e65100 !important;
+}
+
+a:not(.pf-v5-c-button):hover {
+  color: #bf360c !important;
+}

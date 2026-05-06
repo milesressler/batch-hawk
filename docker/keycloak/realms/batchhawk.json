@@ -8,7 +8,7 @@
   "clientScopes": [
     {
       "name": "worker",
-      "description": "Scope for internal worker service — grants access to /internal/** endpoints",
+      "description": "Scope for internal worker service \u2014 grants access to /internal/** endpoints",
       "protocol": "openid-connect"
     }
   ],
@@ -22,7 +22,10 @@
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
-      "defaultClientScopes": ["openid", "worker"]
+      "defaultClientScopes": [
+        "openid",
+        "worker"
+      ]
     },
     {
       "clientId": "batch-hawk-web",
@@ -41,5 +44,6 @@
         "http://localhost:8080"
       ]
     }
-  ]
+  ],
+  "loginTheme": "batchhawk"
 }

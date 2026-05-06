@@ -16,6 +16,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     volumes:
       - ./docker/keycloak/realms:/opt/keycloak/data/import
+      - ./docker/keycloak/themes:/opt/keycloak/themes
     ports:
       - '8180:8080'
 

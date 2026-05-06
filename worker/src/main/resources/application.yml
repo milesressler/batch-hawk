@@ -14,12 +14,21 @@ spring:
           keycloak:
             issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/batchhawk}
 
+logging:
+  level:
+    com.batchhawk.worker.scraper.playwright: DEBUG
+
 batchhawk:
   worker:
     api-base-url: ${WORKER_API_BASE_URL:http://localhost:8080}
     poll-interval-seconds: 600
     refresh-interval-hours: 24
     max-run-minutes: 10
+    scraping:
+      max-turns: 12
+      navigation-timeout-ms: 15000
+      page-text-max-chars: 12000
+      max-links: 50
 
 ---
 spring:

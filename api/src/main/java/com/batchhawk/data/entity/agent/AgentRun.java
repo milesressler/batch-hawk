@@ -48,4 +48,10 @@ public class AgentRun extends BaseEntity {
 
     @Column(name = "checkout_notes", columnDefinition = "text")
     private String checkoutNotes;
+
+    @Column(name = "input_tokens")
+    private Long inputTokens;
+
+    @Column(name = "output_tokens")
+    private Long outputTokens;
 }

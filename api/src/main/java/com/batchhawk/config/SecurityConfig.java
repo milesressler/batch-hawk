@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/actuator/health").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/internal/**").hasAuthority("SCOPE_worker")
+                .requestMatchers("/api/products").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
