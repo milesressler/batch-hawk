@@ -28,19 +28,54 @@ class PlaywrightAgentScraper(
         log.info("Starting playwright scrape for runId={} url={}", job.runId, websiteUrl)
 
         return browserManager.withContext { context ->
-            val page = context.newPage()
-            val browserTools = BrowserTools(
-                page = page,
-                allowedDomain = allowedDomain,
-                config = workerProperties.scraping,
-                objectMapper = objectMapper,
+            // Stage 1: discover product URLs
+            val discoveryPage = context.newPage()
+            val discoveryTools = BrowserTools(discoveryPage, allowedDomain, workerProperties.scraping, objectMapper)
+            val discoverySession = DiscoverySession(anthropicClient, discoveryTools, workerProperties.scraping, job)
+            val discovery = discoverySession.run()
+            discoveryPage.close()
+
+            log.info("Discovery complete: {} products, siteHints={}", discovery.products.size, discovery.siteHintsJson != null)
+
+            if (discovery.products.isEmpty()) {
+                return@withContext CompleteRunRequest(
+                    status = "FAILED",
+                    products = emptyList(),
+                    notes = "Discovery found no product URLs",
+                    siteHints = discovery.siteHintsJson,
+                    inputTokens = discoverySession.inputTokens,
+                    outputTokens = discoverySession.outputTokens,
+                )
+            }
+
+            // Stage 2: extract details for each product
+            var totalInputTokens = discoverySession.inputTokens
+            var totalOutputTokens = discoverySession.outputTokens
+
+            val products = discovery.products.mapNotNull { discovered ->
+                val detailPage = context.newPage()
+                val detailTools = BrowserTools(detailPage, allowedDomain, workerProperties.scraping, objectMapper)
+                val detailSession = ProductDetailSession(anthropicClient, detailTools, workerProperties.scraping, objectMapper, job.integrationType)
+                val result = runCatching { detailSession.extract(discovered) }.getOrElse { e ->
+                    log.warn("Detail extraction failed for {}: {}", discovered.url, e.message)
+                    null
+                }
+                detailPage.close()
+                totalInputTokens += detailSession.inputTokens
+                totalOutputTokens += detailSession.outputTokens
+                result
+            }
+
+            log.info("Extraction complete: {}/{} products succeeded", products.size, discovery.products.size)
+
+            CompleteRunRequest(
+                status = "SUCCESS",
+                products = products,
+                notes = "Scraped ${products.size} products (${discovery.products.size} discovered)",
+                siteHints = discovery.siteHintsJson,
+                inputTokens = totalInputTokens,
+                outputTokens = totalOutputTokens,
             )
-            ScraperAgentSession(
-                anthropicClient = anthropicClient,
-                browserTools = browserTools,
-                config = workerProperties.scraping,
-                job = job,
-            ).run()
         }
     }
 }

@@ -4,6 +4,7 @@ import com.batchhawk.common.CompleteRunRequest;
 import com.batchhawk.common.NextJobResponse;
 import com.batchhawk.common.ProductUpdateRequest;
 import com.batchhawk.common.RoasterUpdateRequest;
+import com.batchhawk.common.VariantInfo;
 import com.batchhawk.data.entity.agent.AgentRun;
 import com.batchhawk.data.entity.observation.ProductObservation;
 import com.batchhawk.data.entity.product.Product;
@@ -18,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,15 +48,43 @@ public class WorkerJobService {
     @Value("${batchhawk.max-run-minutes:10}")
     private int maxRunMinutes;
 
-    @Transactional(noRollbackFor = DataIntegrityViolationException.class)
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
+    @Transactional
+    public void scheduleJobs() {
+        final var cutoff = Instant.now().minus(refreshIntervalHours, ChronoUnit.HOURS);
+        final var due = roasterRepository.findAllDueForScheduling(cutoff);
+        if (due.isEmpty()) return;
+
+        log.info("Enqueueing {} roaster(s) for refresh", due.size());
+        due.forEach(roaster -> {
+            final var run = new AgentRun();
+            run.setRoaster(roaster);
+            run.setStatus(AgentRunStatus.PENDING);
+            agentRunRepository.save(run);
+            if (roaster.isPendingRefresh()) {
+                roaster.setPendingRefresh(false);
+                roasterRepository.save(roaster);
+            }
+        });
+    }
+
+    @Transactional
     public Optional<NextJobResponse> claimNextJob() {
-        try {
-            final var cutoff = Instant.now().minus(refreshIntervalHours, ChronoUnit.HOURS);
-            return roasterRepository.findNextDueForRefresh(cutoff).map(this::createRunForRoaster);
-        } catch (DataIntegrityViolationException e) {
-            // Another worker claimed this roaster concurrently — nothing available
-            return Optional.empty();
-        }
+        return agentRunRepository.findFirstByStatusOrderByCreatedAtAsc(AgentRunStatus.PENDING)
+                .map(run -> {
+                    run.setStatus(AgentRunStatus.IN_PROGRESS);
+                    run.setStartedAt(Instant.now());
+                    agentRunRepository.save(run);
+                    final var roaster = run.getRoaster();
+                    return new NextJobResponse(
+                            run.getId(),
+                            roaster.getId(),
+                            roaster.getWebsiteUrl(),
+                            roaster.getEmailListUrl(),
+                            roaster.getUrlHints(),
+                            roaster.getIntegrationType().name()
+                    );
+                });
     }
 
     @Transactional
@@ -105,27 +133,12 @@ public class WorkerJobService {
         roasterRepository.save(roaster);
     }
 
-    private NextJobResponse createRunForRoaster(final Roaster roaster) {
-        final var run = new AgentRun();
-        run.setRoaster(roaster);
-        run.setStartedAt(Instant.now());
-        run.setStatus(AgentRunStatus.IN_PROGRESS);
-        final var saved = agentRunRepository.save(run);
-        return new NextJobResponse(
-                saved.getId(),
-                roaster.getId(),
-                roaster.getWebsiteUrl(),
-                roaster.getEmailListUrl(),
-                roaster.getUrlHints(),
-                roaster.getIntegrationType().name()
-        );
-    }
-
     private void upsertProduct(final AgentRun run, final ProductUpdateRequest update, final Instant now) {
         if (update.getName() == null) return;
 
-        final var product = productRepository
-                .findByRoasterIdAndNameIgnoreCase(run.getRoaster().getId(), update.getName())
+        final var product = Optional.ofNullable(update.getExternalProductId())
+                .flatMap(extId -> productRepository.findByRoasterIdAndExternalProductId(run.getRoaster().getId(), extId))
+                .or(() -> productRepository.findByRoasterIdAndNameIgnoreCase(run.getRoaster().getId(), update.getName()))
                 .orElseGet(() -> {
                     final var p = new Product();
                     p.setRoaster(run.getRoaster());
@@ -143,10 +156,16 @@ public class WorkerJobService {
         Optional.ofNullable(update.isDecaf()).ifPresent(product::setDecaf);
         Optional.ofNullable(update.getAvailabilityType()).ifPresent(product::setAvailabilityType);
         Optional.ofNullable(update.getDescription()).ifPresent(product::setDescription);
+        Optional.ofNullable(update.getProductUrl()).ifPresent(product::setProductUrl);
+        Optional.ofNullable(update.getExternalProductId()).ifPresent(product::setExternalProductId);
+        Optional.ofNullable(update.getOffersGrinding()).ifPresent(product::setOffersGrinding);
 
         final var saved = productRepository.save(product);
 
-        if (update.getPriceInCents() != null || update.getInStock() != null || update.getBagSize() != null) {
+        final var variants = update.getVariants();
+        if (variants != null && !variants.isEmpty()) {
+            variants.forEach(variant -> writeObservationFromVariant(run, saved, variant, now));
+        } else if (update.getPriceInCents() != null || update.getInStock() != null || update.getBagSize() != null) {
             writeObservation(run, saved, update, now);
         }
     }
@@ -156,7 +175,7 @@ public class WorkerJobService {
         final var obs = new ProductObservation();
         obs.setProduct(product);
         obs.setObservedAt(now);
-        obs.setAgentRunId(run.getId());
+        obs.setAgentRun(run);
 
         Optional.ofNullable(update.getPriceInCents())
                 .map(cents -> BigDecimal.valueOf(cents).movePointLeft(2))
@@ -176,9 +195,42 @@ public class WorkerJobService {
         productObservationRepository.save(obs);
     }
 
+    private void writeObservationFromVariant(final AgentRun run, final Product product,
+                                              final VariantInfo variant, final Instant now) {
+        if (variant.getPriceInCents() == null && variant.getInStock() == null && variant.getBagSize() == null) return;
+
+        final var obs = new ProductObservation();
+        obs.setProduct(product);
+        obs.setObservedAt(now);
+        obs.setAgentRun(run);
+
+        Optional.ofNullable(variant.getPriceInCents())
+                .map(cents -> BigDecimal.valueOf(cents).movePointLeft(2))
+                .ifPresent(obs::setPriceUsd);
+
+        Optional.ofNullable(variant.getBagSize()).ifPresent(size -> {
+            obs.setBagSize(size);
+            obs.setBagSizeUnit(variant.getBagUnit());
+            final var bagSizeOz = toOz(size, variant.getBagUnit());
+            obs.setBagSizeOz(bagSizeOz);
+            if (obs.getPriceUsd() != null && bagSizeOz.compareTo(BigDecimal.ZERO) > 0) {
+                obs.setPricePerOz(obs.getPriceUsd().divide(bagSizeOz, 4, RoundingMode.HALF_UP));
+            }
+        });
+
+        Optional.ofNullable(variant.getInStock()).ifPresent(obs::setInStock);
+        productObservationRepository.save(obs);
+    }
+
     private static BigDecimal toOz(final int size, final String unit) {
         if ("g".equalsIgnoreCase(unit) || "grams".equalsIgnoreCase(unit)) {
             return BigDecimal.valueOf(size).divide(BigDecimal.valueOf(28.3495), 4, RoundingMode.HALF_UP);
+        }
+        if ("lb".equalsIgnoreCase(unit) || "lbs".equalsIgnoreCase(unit) || "pounds".equalsIgnoreCase(unit)) {
+            return BigDecimal.valueOf(size).multiply(BigDecimal.valueOf(16));
+        }
+        if ("kg".equalsIgnoreCase(unit) || "kilograms".equalsIgnoreCase(unit)) {
+            return BigDecimal.valueOf(size).multiply(BigDecimal.valueOf(35.274));
         }
         return BigDecimal.valueOf(size);
     }

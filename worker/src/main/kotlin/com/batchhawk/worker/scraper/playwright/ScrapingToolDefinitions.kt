@@ -55,49 +55,39 @@ object ScrapingToolDefinitions {
         )
     )
 
-    private val returnProducts = tool(
-        name = "return_products",
+    private val returnProductList = tool(
+        name = "return_product_list",
         description = """
-            Signal that extraction is complete and return all discovered products.
-            Call this when you have visited all listing pages and collected product data.
-            Include site structure hints you discovered to speed up future runs.
+            Signal that discovery is complete. Return all product page URLs found, with
+            any name and price visible on the listing page. Also include site structure hints
+            discovered during this run to speed up future scrapes.
+            Call this once you have collected product URLs from all listing pages.
         """.trimIndent(),
         required = listOf("products"),
         properties = mapOf(
             "products" to mapOf(
                 "type" to "array",
-                "description" to "All coffee products found on this site",
+                "description" to "Product pages discovered on this site",
                 "items" to mapOf(
                     "type" to "object",
+                    "required" to listOf("url"),
                     "properties" to mapOf(
-                        "name" to mapOf("type" to "string"),
-                        "priceInCents" to mapOf("type" to "integer", "description" to "Price in cents, e.g. 1895 for \$18.95"),
-                        "bagSize" to mapOf("type" to "integer"),
-                        "bagUnit" to mapOf("type" to "string", "description" to "oz, g, lb, or kg"),
-                        "roastLevel" to mapOf("type" to "string", "description" to "light, medium, medium-dark, or dark"),
-                        "productType" to mapOf("type" to "string", "description" to "single origin, blend, or espresso"),
-                        "originCountry" to mapOf("type" to "string"),
-                        "originRegion" to mapOf("type" to "string"),
-                        "process" to mapOf("type" to "string", "description" to "washed, natural, honey, anaerobic, or other"),
-                        "brewMethods" to mapOf("type" to "array", "items" to mapOf("type" to "string")),
-                        "flavorProfile" to mapOf("type" to "array", "items" to mapOf("type" to "string"), "description" to "Tasting notes as lowercase strings"),
-                        "isDecaf" to mapOf("type" to "boolean"),
-                        "availabilityType" to mapOf("type" to "string", "description" to "standard, limited, or seasonal"),
-                        "description" to mapOf("type" to "string", "description" to "Plain text product description, max 500 chars"),
-                        "inStock" to mapOf("type" to "boolean"),
-                        "productUrl" to mapOf("type" to "string", "description" to "Absolute URL of the product page"),
+                        "url" to mapOf("type" to "string", "description" to "Absolute URL of the product page"),
+                        "name" to mapOf("type" to "string", "description" to "Product name if visible on the listing page"),
+                        "priceInCents" to mapOf("type" to "integer", "description" to "Price in cents if visible on the listing page, e.g. 1895 for \$18.95"),
                     )
                 )
             ),
             "siteHints" to mapOf(
                 "type" to "object",
-                "description" to "Site structure hints discovered during this run, used to speed up future scrapes",
+                "description" to "Site structure discovered during this run",
                 "properties" to mapOf(
-                    "productListingUrls" to mapOf("type" to "array", "items" to mapOf("type" to "string"), "description" to "URLs of product listing/collection pages"),
-                    "paginationType" to mapOf("type" to "string", "description" to "query_param, load_more, infinite_scroll, or none"),
-                    "paginationParam" to mapOf("type" to "string", "description" to "Query parameter name for pagination, e.g. 'page'"),
-                    "requiresDetailPage" to mapOf("type" to "boolean", "description" to "Whether visiting individual product pages is needed to get full data"),
-                    "shippingPolicyUrl" to mapOf("type" to "string"),
+                    "productListingUrls" to mapOf("type" to "array", "items" to mapOf("type" to "string"), "description" to "URLs of product listing/category pages"),
+                    "paginationType" to mapOf("type" to "string", "description" to "query_param, paged_param, load_more, infinite_scroll, or none"),
+                    "paginationParam" to mapOf("type" to "string", "description" to "Query parameter name for pagination, e.g. 'paged'"),
+                    "requiresDetailPage" to mapOf("type" to "boolean", "description" to "Whether individual product pages are needed for full data"),
+                    "platformType" to mapOf("type" to "string", "description" to "woocommerce, squarespace, shopify, or custom"),
+                    "failedStrategies" to mapOf("type" to "array", "items" to mapOf("type" to "string"), "description" to "Pagination or navigation patterns that did not work"),
                 )
             )
         )

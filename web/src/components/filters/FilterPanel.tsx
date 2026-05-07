@@ -1,4 +1,5 @@
-import { Button, Chip, Divider, Group, Stack, Switch, Text, Title } from '@mantine/core';
+import { Button, Chip, Divider, Group, Stack, Switch, Text, TextInput, Title } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 
 export interface FilterState {
   roastLevel: string[];
@@ -6,6 +7,8 @@ export interface FilterState {
   productType: string[];
   availability: string[];
   decafOnly: boolean;
+  keyword: string;
+  typicalSizesOnly: boolean;
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -14,6 +17,8 @@ export const EMPTY_FILTERS: FilterState = {
   productType: [],
   availability: [],
   decafOnly: false,
+  keyword: '',
+  typicalSizesOnly: true,
 };
 
 const ROAST_LEVELS = ['LIGHT', 'MEDIUM', 'MEDIUM_DARK', 'DARK'];
@@ -35,7 +40,9 @@ function hasActiveFilters(f: FilterState) {
     f.process.length > 0 ||
     f.productType.length > 0 ||
     f.availability.length > 0 ||
-    f.decafOnly
+    f.decafOnly ||
+    f.keyword.trim().length > 0 ||
+    !f.typicalSizesOnly
   );
 }
 
@@ -81,6 +88,15 @@ export function FilterPanel({ filters, onChange }: Props) {
         )}
       </Group>
 
+      <TextInput
+        placeholder="Search by name, roaster, flavor…"
+        leftSection={<IconSearch size={14} />}
+        value={filters.keyword}
+        onChange={(e) => set('keyword', e.currentTarget.value)}
+        size="sm"
+      />
+      <Divider />
+
       <ChipSection
         title="Roast Level"
         values={ROAST_LEVELS}
@@ -113,6 +129,12 @@ export function FilterPanel({ filters, onChange }: Props) {
         label="Decaf only"
         checked={filters.decafOnly}
         onChange={(e) => set('decafOnly', e.currentTarget.checked)}
+      />
+      <Switch
+        label="Typical sizes only (6–32 oz)"
+        description="Hides bulk and sample-sized bags"
+        checked={filters.typicalSizesOnly}
+        onChange={(e) => set('typicalSizesOnly', e.currentTarget.checked)}
       />
     </Stack>
   );

@@ -26,20 +26,39 @@ const SORT_OPTIONS = [
 
 const MAX_RESULTS = 150;
 
+const toFilterKey = (s: string) => s.toUpperCase().replace(/[-\s]+/g, '_');
+
 function applyFilters(products: Product[], filters: FilterState): Product[] {
+  const kw = filters.keyword.trim().toLowerCase();
   return products.filter((p) => {
-    if (filters.roastLevel.length > 0 && !filters.roastLevel.includes(p.roastLevel ?? ''))
+    if (filters.roastLevel.length > 0 && !filters.roastLevel.includes(toFilterKey(p.roastLevel ?? '')))
       return false;
-    if (filters.process.length > 0 && !filters.process.includes(p.process ?? ''))
+    if (filters.process.length > 0 && !filters.process.includes(toFilterKey(p.process ?? '')))
       return false;
-    if (filters.productType.length > 0 && !filters.productType.includes(p.productType ?? ''))
+    if (filters.productType.length > 0 && !filters.productType.includes(toFilterKey(p.productType ?? '')))
       return false;
     if (
       filters.availability.length > 0 &&
-      !filters.availability.includes(p.availabilityType ?? '')
+      !filters.availability.includes(toFilterKey(p.availabilityType ?? ''))
     )
       return false;
     if (filters.decafOnly && !p.decaf) return false;
+    if (kw) {
+      const haystack = [
+        p.name,
+        p.roaster.name,
+        p.description,
+        p.originCountry,
+        p.originRegion,
+        ...(p.flavorProfile ?? []),
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(kw)) return false;
+    }
+    if (filters.typicalSizesOnly) {
+      const sizeable = (p.variants ?? []).filter(v => v.bagSizeOz != null);
+      if (sizeable.length > 0 && !sizeable.some(v => v.bagSizeOz! >= 6 && v.bagSizeOz! <= 32))
+        return false;
+    }
     return true;
   });
 }

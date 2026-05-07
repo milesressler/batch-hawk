@@ -138,6 +138,10 @@ The agent prompt includes these hints on repeat runs to skip discovery and go st
 
 - **Never inspect dependency JARs** to learn SDK APIs (e.g., `jar tf`, `javap`). Use web search, official documentation, or read existing usages in the codebase instead.
 
+## Kotlin Conventions
+
+- **No wildcard imports:** Always use explicit imports (`import com.foo.Bar`), never `import com.foo.*`.
+
 ## Development Conventions
 
 - **One module at a time:** `worker`, `web`, `infra`, `shared` are stubs. Only `api` is included in `settings.gradle`. Uncomment modules there when activating them.

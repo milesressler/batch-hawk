@@ -25,7 +25,7 @@ public class AgentRun extends BaseEntity {
     @JoinColumn(name = "roaster_id", nullable = false)
     private Roaster roaster;
 
-    @Column(name = "started_at", nullable = false)
+    @Column(name = "started_at")
     private Instant startedAt;
 
     @Column(name = "completed_at")
@@ -34,10 +34,6 @@ public class AgentRun extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private AgentRunStatus status;
-
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "fields_attempted", columnDefinition = "text[]")
-    private List<ScrapedField> fieldsAttempted;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "fields_found", columnDefinition = "text[]")

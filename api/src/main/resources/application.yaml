@@ -1,6 +1,8 @@
 spring:
   application:
     name: batch-hawk
+  flyway:
+    out-of-order: true
 
 logging:
   pattern:
@@ -10,8 +12,6 @@ logging:
       hibernate:
         jdbc:
           time_zone: UTC
-  flyway:
-    out-of-order: true
   web:
     error:
       include-stacktrace: never

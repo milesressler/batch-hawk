@@ -3,6 +3,7 @@ package com.batchhawk.worker.scraper.shopify
 import com.batchhawk.common.CompleteRunRequest
 import com.batchhawk.common.NextJobResponse
 import com.batchhawk.worker.scraper.RoasterScraper
+import com.batchhawk.worker.scraper.playwright.PlaywrightAgentScraper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -12,6 +13,7 @@ class ShopifyProductScraper(
     private val externalWebClient: WebClient,
     private val llmExtractor: ShopifyLlmExtractor,
     private val roasterInfoExtractor: RoasterInfoExtractor,
+    private val playwrightScraper: PlaywrightAgentScraper,
 ) : RoasterScraper {
 
     private val log = LoggerFactory.getLogger(ShopifyProductScraper::class.java)
@@ -22,14 +24,17 @@ class ShopifyProductScraper(
 
         val response = try {
             externalWebClient.get()
-                .uri("$baseUrl/products.json?limit=3")
+                .uri("$baseUrl/products.json?limit=250")
                 .retrieve()
                 .bodyToMono(ShopifyProductsResponse::class.java)
                 .block()
-                ?: return CompleteRunRequest("FAILED", emptyList(), "Empty response from $baseUrl/products.json")
+                ?: run {
+                    log.warn("Empty response from {}/products.json — falling back to Playwright", baseUrl)
+                    return playwrightScraper.scrape(job)
+                }
         } catch (e: Exception) {
-            log.warn("Failed to fetch products.json for {}: {}", baseUrl, e.message)
-            return CompleteRunRequest("FAILED", emptyList(), "Could not fetch products.json: ${e.message}")
+            log.warn("products.json unavailable for {} ({}) — falling back to Playwright", baseUrl, e.message)
+            return playwrightScraper.scrape(job)
         }
 
         val slim = response.products

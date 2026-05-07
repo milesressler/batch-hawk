@@ -10,6 +10,7 @@ data class ShopifyProductsResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ShopifySlimProduct(
+    val id: Long?,
     val title: String?,
     val handle: String?,
     val tags: List<String> = emptyList(),

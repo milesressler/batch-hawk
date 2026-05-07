@@ -24,6 +24,11 @@ export function ProductCard({ product }: Props) {
   const isLimitedAvailability =
     product.availabilityType && product.availabilityType !== 'STANDARD';
 
+  const variants = product.variants ?? [];
+  const pricesPerOz = variants.map(v => v.pricePerOz).filter((p): p is number => p != null);
+  const minPricePerOz = pricesPerOz.length > 0 ? Math.min(...pricesPerOz) : null;
+  const isOutOfStock = variants.length > 0 && variants.every(v => v.inStock === false);
+
   return (
     <Card
       component={Link}
@@ -47,12 +52,22 @@ export function ProductCard({ product }: Props) {
                 {fmtLabel(product.availabilityType!)}
               </Badge>
             )}
+            {isOutOfStock && (
+              <Badge size="xs" color="red" variant="light">Out of stock</Badge>
+            )}
           </Group>
         </Group>
 
-        <Text fw={600} ff="heading" size="lg" lh={1.3}>
-          {product.name}
-        </Text>
+        <Group justify="space-between" align="baseline" wrap="nowrap">
+          <Text fw={600} ff="heading" size="lg" lh={1.3}>
+            {product.name}
+          </Text>
+          {minPricePerOz != null && (
+            <Text fw={600} size="sm" style={{ flexShrink: 0 }}>
+              {pricesPerOz.length > 1 ? 'from ' : ''}${minPricePerOz.toFixed(2)}/oz
+            </Text>
+          )}
+        </Group>
 
         {(product.roastLevel || product.process || origin) && (
           <Group gap="xs" wrap="wrap">

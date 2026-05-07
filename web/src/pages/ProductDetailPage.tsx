@@ -1,10 +1,51 @@
-import { Anchor, Badge, Group, Skeleton, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Badge, Divider, Group, Skeleton, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { IconClock, IconScissors } from '@tabler/icons-react';
+import type { ProductObservation } from '../services/productsApi';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import productsApi from '../services/productsApi';
 
 const fmtLabel = (s: string) =>
   s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+function VariantsTable({ variants }: { variants: ProductObservation[] }) {
+  if (variants.length === 0) return null;
+
+  const observedAt = variants[0].observedAt;
+
+  return (
+    <Stack gap="xs">
+      <Group justify="space-between" align="center">
+        <Text size="xs" c="dimmed" tt="uppercase" fw={500}>Pricing</Text>
+        <Tooltip label={`Last checked ${new Date(observedAt).toLocaleString()}`} withArrow>
+          <IconClock size={14} color="var(--mantine-color-dimmed)" style={{ cursor: 'default' }} />
+        </Tooltip>
+      </Group>
+      <Divider />
+      {variants.map((v) => {
+        const bagLabel = v.bagSize != null ? `${v.bagSize}${v.bagSizeUnit ?? ''}` : '—';
+        return (
+          <Group key={v.id} justify="space-between" align="center">
+            <Text size="sm" fw={500}>{bagLabel}</Text>
+            <Group gap="lg" align="center">
+              {v.pricePerOz != null && (
+                <Text size="xs" c="dimmed">${v.pricePerOz.toFixed(2)}/oz</Text>
+              )}
+              {v.priceUsd != null && (
+                <Text fw={600} size="sm" w={60} ta="right">${v.priceUsd.toFixed(2)}</Text>
+              )}
+              {v.inStock != null && (
+                <Badge size="xs" color={v.inStock ? 'green' : 'red'} variant="dot" w={80} ta="center">
+                  {v.inStock ? 'In stock' : 'Out of stock'}
+                </Badge>
+              )}
+            </Group>
+          </Group>
+        );
+      })}
+    </Stack>
+  );
+}
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +84,16 @@ export function ProductDetailPage() {
         {product.process && <Badge variant="light">{fmtLabel(product.process)}</Badge>}
         {origin && <Badge color="teal" variant="light">{origin}</Badge>}
         {product.decaf && <Badge color="gray" variant="outline">Decaf</Badge>}
+        {product.offersGrinding && (
+          <Badge color="violet" variant="light" leftSection={<IconScissors size={10} />}>
+            Grinding available
+          </Badge>
+        )}
       </Group>
+
+      {product.variants && product.variants.length > 0 && (
+        <VariantsTable variants={product.variants} />
+      )}
 
       {product.flavorProfile && product.flavorProfile.length > 0 && (
         <Text c="dimmed">{product.flavorProfile.map(fmtLabel).join(' · ')}</Text>
@@ -51,7 +101,11 @@ export function ProductDetailPage() {
 
       {product.description && <Text>{product.description}</Text>}
 
-      {product.roaster.websiteUrl && (
+      {product.productUrl ? (
+        <Anchor href={product.productUrl} target="_blank" rel="noopener noreferrer">
+          Buy from {product.roaster.name} →
+        </Anchor>
+      ) : product.roaster.websiteUrl && (
         <Anchor href={product.roaster.websiteUrl} target="_blank" rel="noopener noreferrer">
           Visit {product.roaster.name} →
         </Anchor>

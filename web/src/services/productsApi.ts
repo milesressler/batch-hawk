@@ -2,6 +2,7 @@ import client from "./client";
 import type { components } from "../api-types";
 
 export type Product = components["schemas"]["ProductResponse"];
+export type ProductObservation = components["schemas"]["ProductObservationResponse"];
 export type ProductPage = components["schemas"]["PageProductResponse"];
 
 interface ListParams {
@@ -14,7 +15,9 @@ interface ListParams {
 }
 
 const list = async (params?: ListParams): Promise<ProductPage> => {
-  const { data, error } = await client.GET("/api/products", { params });
+  const { data, error } = await client.GET("/api/products", {
+    params: { query: params },
+  });
   if (error) throw error;
   return data!;
 };

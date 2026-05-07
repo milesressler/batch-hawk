@@ -4,6 +4,7 @@ import { setTokenGetter } from '../services/client';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
+  isAdmin: boolean;
   user: { name: string; email: string } | null;
   login: () => void;
   logout: () => void;
@@ -11,6 +12,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
+  isAdmin: false,
   user: null,
   login: () => {},
   logout: () => {},

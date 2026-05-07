@@ -40,7 +40,7 @@ class WorkerPoller(
     }
 
     private fun dispatch(job: NextJobResponse): CompleteRunRequest {
-        val scraper = scrapers[job.integrationType]
+        val scraper = scrapers[job.integrationType] ?: scrapers["CUSTOM"]
             ?: return CompleteRunRequest(
                 "FAILED",
                 emptyList(),

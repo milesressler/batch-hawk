@@ -1,7 +1,6 @@
 package com.batchhawk.worker.scraper.playwright
 
 import com.anthropic.core.JsonValue
-import com.batchhawk.common.ProductUpdateRequest
 import com.batchhawk.worker.config.WorkerProperties.ScrapingProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.playwright.Locator
@@ -64,6 +63,41 @@ class BrowserTools(
         "Click failed — element not found or not clickable. Selector: $selector"
     }
 
+    fun findAllSelectOptions(): String = runCatching {
+        val result = page.evaluate("""
+            () => Array.from(document.querySelectorAll('select'))
+                .filter(sel => sel.options.length > 1)
+                .map((sel, idx) => ({
+                    index: idx,
+                    id: sel.id || null,
+                    name: sel.name || null,
+                    options: Array.from(sel.options).map(o => ({
+                        value: o.value,
+                        text: o.text.trim()
+                    }))
+                }))
+        """.trimIndent())
+        objectMapper.writeValueAsString(result)
+    }.getOrElse { "[]" }
+
+    fun chooseSelectOption(selectIndex: Int, optionValue: String): String = runCatching {
+        page.evaluate("""
+            ([idx, value]) => {
+                const sel = Array.from(document.querySelectorAll('select'))
+                    .filter(s => s.options.length > 1)[idx];
+                if (!sel) return;
+                sel.value = value;
+                ['input', 'change'].forEach(evt =>
+                    sel.dispatchEvent(new Event(evt, { bubbles: true })));
+            }
+        """.trimIndent(), listOf(selectIndex, optionValue))
+        page.waitForLoadState(LoadState.NETWORKIDLE, Page.WaitForLoadStateOptions().setTimeout(3000.0))
+        preprocessPage()
+    }.getOrElse { e ->
+        log.warn("chooseSelectOption failed index={} value={}: {}", selectIndex, optionValue, e.message)
+        "Select failed: ${e.message}"
+    }
+
     fun scrollToBottom(): String = runCatching {
         page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
         page.waitForTimeout(1500.0)
@@ -91,26 +125,29 @@ class BrowserTools(
         "Could not extract links: ${e.message}"
     }
 
-    fun returnProducts(input: JsonValue): String = runCatching {
+    fun returnProductList(input: JsonValue): String = runCatching {
         val rootNode = input.convert(com.fasterxml.jackson.databind.JsonNode::class.java)!!
-        log.debug("return_products raw input: {}", rootNode.toString().take(500))
+        log.debug("return_product_list raw input: {}", rootNode.toString().take(500))
 
-        val products: List<ProductUpdateRequest> = objectMapper.treeToValue(
-            rootNode["products"],
-            objectMapper.typeFactory.constructCollectionType(List::class.java, ProductUpdateRequest::class.java)
-        )
+        val products: List<DiscoveredProduct> = rootNode["products"]?.map { node ->
+            DiscoveredProduct(
+                url = node["url"]?.asText() ?: return@map null,
+                name = node["name"]?.asText(),
+                priceInCents = node["priceInCents"]?.asInt(),
+            )
+        }?.filterNotNull() ?: emptyList()
 
         val siteHintsJson = rootNode.get("siteHints")
             ?.takeIf { !it.isNull }
             ?.let { objectMapper.writeValueAsString(it) }
 
-        terminalResult = TerminalResult.Success(products, siteHintsJson)
-        log.info("Agent returned {} products", products.size)
-        "Products received. Session complete."
+        terminalResult = TerminalResult.Success(DiscoveryResult(products, siteHintsJson))
+        log.info("Discovery complete: {} products found", products.size)
+        "Product list received. Discovery complete."
     }.getOrElse { e ->
-        log.error("Failed to parse return_products input", e)
-        terminalResult = TerminalResult.Failure("Failed to parse products: ${e.message}")
-        "Parse error — could not deserialize products: ${e.message}"
+        log.error("Failed to parse return_product_list input", e)
+        terminalResult = TerminalResult.Failure("Failed to parse product list: ${e.message}")
+        "Parse error: ${e.message}"
     }
 
     fun reportFailure(reason: String): String {
@@ -150,10 +187,6 @@ class BrowserTools(
 }
 
 sealed class TerminalResult {
-    data class Success(
-        val products: List<ProductUpdateRequest>,
-        val siteHintsJson: String?,
-    ) : TerminalResult()
-
+    data class Success(val discoveryResult: DiscoveryResult) : TerminalResult()
     data class Failure(val reason: String) : TerminalResult()
 }
