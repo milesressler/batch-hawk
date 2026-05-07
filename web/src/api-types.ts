@@ -36,7 +36,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/roasters": {
+    "/api/admin/roasters": {
         parameters: {
             query?: never;
             header?: never;
@@ -44,6 +44,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/roasters/{id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["trigger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/roasters/{id}/products/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deactivateProducts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/roasters/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update"];
+        trace?: never;
+    };
+    "/api/roasters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -75,7 +139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -92,6 +156,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -161,6 +257,34 @@ export interface components {
             urlHints?: string;
             integrationType?: string;
         };
+        AdminRoasterRequest: {
+            name?: string;
+            websiteUrl?: string;
+            emailListUrl?: string;
+            /** @enum {string} */
+            integrationType?: "SHOPIFY" | "WOO_COMMERCE" | "SQUARE" | "SQUARESPACE" | "CUSTOM" | "UNKNOWN";
+            /** @enum {string} */
+            moderationStatus?: "PENDING" | "APPROVED" | "REJECTED";
+            active?: boolean;
+        };
+        AdminRoasterResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            websiteUrl?: string;
+            active: boolean;
+            /** @enum {string} */
+            moderationStatus: "PENDING" | "APPROVED" | "REJECTED";
+            /** @enum {string} */
+            integrationType: "SHOPIFY" | "WOO_COMMERCE" | "SQUARE" | "SQUARESPACE" | "CUSTOM" | "UNKNOWN";
+            pendingRefresh: boolean;
+            /** Format: date-time */
+            lastRunStartedAt?: string;
+            /** Format: date-time */
+            lastRunCompletedAt?: string;
+            /** @enum {string} */
+            lastRunStatus?: "PENDING" | "IN_PROGRESS" | "SUCCESS" | "PARTIAL" | "FAILED";
+        };
         Pageable: {
             /** Format: int32 */
             page?: number;
@@ -169,10 +293,10 @@ export interface components {
             sort?: string[];
         };
         PageRoasterResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -180,8 +304,8 @@ export interface components {
             content?: components["schemas"]["RoasterResponse"][];
             /** Format: int32 */
             number?: number;
-            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             empty?: boolean;
@@ -189,13 +313,13 @@ export interface components {
         PageableObject: {
             /** Format: int64 */
             offset?: number;
-            sort?: components["schemas"]["SortObject"];
             unpaged?: boolean;
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
+            sort?: components["schemas"]["SortObject"];
         };
         RoasterResponse: {
             /** Format: uuid */
@@ -220,10 +344,10 @@ export interface components {
             sorted?: boolean;
         };
         PageProductResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
@@ -231,8 +355,8 @@ export interface components {
             content?: components["schemas"]["ProductResponse"][];
             /** Format: int32 */
             number?: number;
-            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             empty?: boolean;
@@ -273,6 +397,44 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             variants: components["schemas"]["ProductObservationResponse"][];
+        };
+        AgentRunResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: uuid */
+            roasterId: string;
+            roasterName: string;
+            /** @enum {string} */
+            status: "PENDING" | "IN_PROGRESS" | "SUCCESS" | "PARTIAL" | "FAILED";
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: int64 */
+            inputTokens?: number;
+            /** Format: int64 */
+            outputTokens?: number;
+            feedbackNotes?: string;
+            checkoutNotes?: string;
+            fieldsFound?: ("PRODUCT_NAME" | "PRODUCT_TYPE" | "ROAST_LEVEL" | "ORIGIN_COUNTRY" | "ORIGIN_REGION" | "PROCESS" | "BREW_METHODS" | "FLAVOR_PROFILE" | "IS_DECAF" | "AVAILABILITY_TYPE" | "DESCRIPTION" | "PRICE" | "BAG_SIZE" | "IN_STOCK")[];
+        };
+        PageAgentRunResponse: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["AgentRunResponse"][];
+            /** Format: int32 */
+            number?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            sort?: components["schemas"]["SortObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            empty?: boolean;
         };
     };
     responses: never;
@@ -329,6 +491,116 @@ export interface operations {
     };
     list: {
         parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRoasterResponse"][];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRoasterRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRoasterResponse"];
+                };
+            };
+        };
+    };
+    trigger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deactivateProducts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRoasterRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRoasterResponse"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
             query: {
                 name?: string;
                 activeOnly?: boolean;
@@ -373,12 +645,17 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query: {
                 roasterId?: string;
-                name?: string;
+                keyword?: string;
                 activeOnly?: boolean;
+                roastLevel?: string[];
+                process?: string[];
+                productType?: string[];
+                availabilityType?: string[];
+                decafOnly?: boolean;
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -416,6 +693,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageAgentRunResponse"];
+                };
+            };
+        };
+    };
+    get_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunResponse"];
                 };
             };
         };

@@ -2,6 +2,7 @@ package com.batchhawk.unit;
 
 import com.batchhawk.data.entity.roaster.Roaster;
 import com.batchhawk.data.entity.product.Product;
+import com.batchhawk.data.repository.ProductObservationRepository;
 import com.batchhawk.data.repository.ProductRepository;
 import com.batchhawk.exception.EntityNotFoundException;
 import com.batchhawk.service.ProductService;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.*;
 class ProductServiceTest {
 
     @Mock ProductRepository productRepository;
+    @Mock ProductObservationRepository productObservationRepository;
     @InjectMocks ProductService productService;
 
     @Test
@@ -58,7 +60,7 @@ class ProductServiceTest {
         when(productRepository.findAll(ArgumentMatchers.<Specification<Product>>isNull(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of()));
 
-        productService.list(null, null, false, Pageable.unpaged());
+        productService.list(null, null, false, null, null, null, null, false, Pageable.unpaged());
 
         verify(productRepository).findAll(ArgumentMatchers.<Specification<Product>>isNull(), any(Pageable.class));
     }
@@ -68,7 +70,7 @@ class ProductServiceTest {
         when(productRepository.findAll(ArgumentMatchers.<Specification<Product>>notNull(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of()));
 
-        productService.list(UUID.randomUUID(), null, false, Pageable.unpaged());
+        productService.list(UUID.randomUUID(), null, false, null, null, null, null, false, Pageable.unpaged());
 
         verify(productRepository).findAll(ArgumentMatchers.<Specification<Product>>notNull(), any(Pageable.class));
     }
@@ -79,7 +81,7 @@ class ProductServiceTest {
         when(productRepository.findAll(ArgumentMatchers.<Specification<Product>>isNull(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of(product)));
 
-        final var result = productService.list(null, null, false, Pageable.unpaged());
+        final var result = productService.list(null, null, false, null, null, null, null, false, Pageable.unpaged());
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().getFirst().name()).isEqualTo("Colombia Huila");

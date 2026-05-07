@@ -30,11 +30,26 @@ public class ProductService {
     private final ProductObservationRepository productObservationRepository;
 
     @Transactional(readOnly = true)
-    public Page<ProductResponse> list(final UUID roasterId, final String name, final boolean activeOnly, final Pageable pageable) {
+    public Page<ProductResponse> list(
+        final UUID roasterId,
+        final String keyword,
+        final boolean activeOnly,
+        final List<String> roastLevel,
+        final List<String> process,
+        final List<String> productType,
+        final List<String> availabilityType,
+        final boolean decafOnly,
+        final Pageable pageable
+    ) {
         final var spec = Stream.<Optional<Specification<Product>>>of(
             Optional.ofNullable(roasterId).map(ProductSpec::forRoaster),
-            Optional.ofNullable(name).filter(Predicate.not(String::isBlank)).map(ProductSpec::nameContains),
-            Optional.of(activeOnly).filter(Boolean::booleanValue).map(ignored -> ProductSpec.isActive(true))
+            Optional.ofNullable(keyword).filter(Predicate.not(String::isBlank)).map(ProductSpec::keywordSearch),
+            Optional.of(activeOnly).filter(Boolean::booleanValue).map(ignored -> ProductSpec.isActive(true)),
+            Optional.ofNullable(roastLevel).filter(Predicate.not(List::isEmpty)).map(ProductSpec::roastLevelIn),
+            Optional.ofNullable(process).filter(Predicate.not(List::isEmpty)).map(ProductSpec::processIn),
+            Optional.ofNullable(productType).filter(Predicate.not(List::isEmpty)).map(ProductSpec::productTypeIn),
+            Optional.ofNullable(availabilityType).filter(Predicate.not(List::isEmpty)).map(ProductSpec::availabilityTypeIn),
+            Optional.of(decafOnly).filter(Boolean::booleanValue).map(ignored -> ProductSpec.isDecaf())
         )
         .flatMap(Optional::stream)
         .reduce(Specification::and)

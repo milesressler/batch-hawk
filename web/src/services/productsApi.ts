@@ -7,8 +7,13 @@ export type ProductPage = components["schemas"]["PageProductResponse"];
 
 interface ListParams {
   roasterId?: string;
-  name?: string;
+  keyword?: string;
   activeOnly?: boolean;
+  roastLevel?: string[];
+  process?: string[];
+  productType?: string[];
+  availabilityType?: string[];
+  decafOnly?: boolean;
   page?: number;
   size?: number;
   sort?: string;

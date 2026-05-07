@@ -9,14 +9,13 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { AppHeader } from '../components/layout/AppHeader';
 import { FilterPanel, EMPTY_FILTERS } from '../components/filters/FilterPanel';
 import type { FilterState } from '../components/filters/FilterPanel';
 import { ProductCard } from '../components/products/ProductCard';
 import productsApi from '../services/productsApi';
-import type { Product } from '../services/productsApi';
 
 const SORT_OPTIONS = [
   { value: 'updatedAt,desc', label: 'Recently updated' },
@@ -24,57 +23,33 @@ const SORT_OPTIONS = [
   { value: 'name,desc', label: 'Name (Z–A)' },
 ];
 
-const MAX_RESULTS = 150;
-
-const toFilterKey = (s: string) => s.toUpperCase().replace(/[-\s]+/g, '_');
-
-function applyFilters(products: Product[], filters: FilterState): Product[] {
-  const kw = filters.keyword.trim().toLowerCase();
-  return products.filter((p) => {
-    if (filters.roastLevel.length > 0 && !filters.roastLevel.includes(toFilterKey(p.roastLevel ?? '')))
-      return false;
-    if (filters.process.length > 0 && !filters.process.includes(toFilterKey(p.process ?? '')))
-      return false;
-    if (filters.productType.length > 0 && !filters.productType.includes(toFilterKey(p.productType ?? '')))
-      return false;
-    if (
-      filters.availability.length > 0 &&
-      !filters.availability.includes(toFilterKey(p.availabilityType ?? ''))
-    )
-      return false;
-    if (filters.decafOnly && !p.decaf) return false;
-    if (kw) {
-      const haystack = [
-        p.name,
-        p.roaster.name,
-        p.description,
-        p.originCountry,
-        p.originRegion,
-        ...(p.flavorProfile ?? []),
-      ].filter(Boolean).join(' ').toLowerCase();
-      if (!haystack.includes(kw)) return false;
-    }
-    if (filters.typicalSizesOnly) {
-      const sizeable = (p.variants ?? []).filter(v => v.bagSizeOz != null);
-      if (sizeable.length > 0 && !sizeable.some(v => v.bagSizeOz! >= 6 && v.bagSizeOz! <= 32))
-        return false;
-    }
-    return true;
-  });
-}
+const PAGE_SIZE = 100;
 
 export function BrowsePage() {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [sortBy, setSortBy] = useState('updatedAt,desc');
 
+  const [debouncedKeyword] = useDebouncedValue(filters.keyword, 300);
+
+  const queryParams = {
+    activeOnly: true,
+    size: PAGE_SIZE,
+    sort: sortBy,
+    keyword: debouncedKeyword.trim() || undefined,
+    roastLevel: filters.roastLevel.length > 0 ? filters.roastLevel : undefined,
+    process: filters.process.length > 0 ? filters.process : undefined,
+    productType: filters.productType.length > 0 ? filters.productType : undefined,
+    availabilityType: filters.availability.length > 0 ? filters.availability : undefined,
+    decafOnly: filters.decafOnly || undefined,
+  };
+
   const { data, isLoading } = useQuery({
-    queryKey: ['products', { activeOnly: true, size: MAX_RESULTS, sort: sortBy }],
-    queryFn: () => productsApi.list({ activeOnly: true, size: MAX_RESULTS, sort: sortBy }),
+    queryKey: ['products', queryParams],
+    queryFn: () => productsApi.list(queryParams),
   });
 
-  const allProducts = data?.content ?? [];
-  const filtered = applyFilters(allProducts, filters);
+  const products = data?.content ?? [];
   const total = data?.totalElements ?? 0;
 
   return (
@@ -109,9 +84,9 @@ export function BrowsePage() {
             />
           </Group>
 
-          {!isLoading && total > MAX_RESULTS && (
+          {!isLoading && total > PAGE_SIZE && (
             <Text size="sm" c="dimmed">
-              Showing {MAX_RESULTS} of {total} — refine your filters to see more.
+              Showing {PAGE_SIZE} of {total} — refine your filters to see more.
             </Text>
           )}
 
@@ -121,14 +96,14 @@ export function BrowsePage() {
                 <Skeleton key={i} height={160} radius="md" />
               ))}
             </SimpleGrid>
-          ) : filtered.length === 0 ? (
+          ) : products.length === 0 ? (
             <Stack align="center" gap="xs" py="xl">
               <Text size="lg" c="dimmed">No products match your filters.</Text>
               <Text size="sm" c="dimmed">Try clearing some filters to see more results.</Text>
             </Stack>
           ) : (
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-              {filtered.map((p) => (
+              {products.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </SimpleGrid>

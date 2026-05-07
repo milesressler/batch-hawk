@@ -10,6 +10,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,11 +23,16 @@ public class ProductController {
     @GetMapping
     public Page<ProductResponse> list(
         @RequestParam(required = false) final UUID roasterId,
-        @RequestParam(required = false) final String name,
+        @RequestParam(required = false) final String keyword,
         @RequestParam(required = false, defaultValue = "true") final boolean activeOnly,
+        @RequestParam(required = false) final List<String> roastLevel,
+        @RequestParam(required = false) final List<String> process,
+        @RequestParam(required = false) final List<String> productType,
+        @RequestParam(required = false) final List<String> availabilityType,
+        @RequestParam(required = false, defaultValue = "false") final boolean decafOnly,
         @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) final Pageable pageable
     ) {
-        return productService.list(roasterId, name, activeOnly, pageable);
+        return productService.list(roasterId, keyword, activeOnly, roastLevel, process, productType, availabilityType, decafOnly, pageable);
     }
 
     @GetMapping("/{id}")
