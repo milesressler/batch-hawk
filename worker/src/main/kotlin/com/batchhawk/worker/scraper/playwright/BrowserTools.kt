@@ -15,6 +15,7 @@ class BrowserTools(
     private val allowedDomain: String,
     private val config: ScrapingProperties,
     private val objectMapper: ObjectMapper,
+    private val integrationType: String? = null,
 ) {
     private val log = LoggerFactory.getLogger(BrowserTools::class.java)
     private val visitedUrls = mutableSetOf<String>()
@@ -40,7 +41,13 @@ class BrowserTools(
         visitedUrls += normalized
 
         return runCatching {
-            page.navigate(normalized, Page.NavigateOptions().setTimeout(config.navigationTimeoutMs).setWaitUntil(WaitUntilState.DOMCONTENTLOADED))
+            val waitUntil = if (integrationType == "SQUARE") WaitUntilState.LOAD else WaitUntilState.DOMCONTENTLOADED
+            page.navigate(normalized, Page.NavigateOptions().setTimeout(config.navigationTimeoutMs).setWaitUntil(waitUntil))
+            if (integrationType == "SQUARE") {
+                runCatching { page.waitForLoadState(LoadState.NETWORKIDLE, Page.WaitForLoadStateOptions().setTimeout(3000.0)) }
+                val rawHtml = page.evaluate("() => document.documentElement?.outerHTML ?? 'NO_DOCUMENT'") as? String ?: ""
+                log.debug("SQUARE raw HTML after load ({}): {}", normalized, rawHtml.take(2000).replace("\n", " "))
+            }
             preprocessPage()
         }.getOrElse { e ->
             log.warn("Navigation failed for {}: {}", normalized, e.message)
@@ -99,7 +106,7 @@ class BrowserTools(
     }
 
     fun scrollToBottom(): String = runCatching {
-        page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+        page.evaluate("() => window.scrollTo(0, (document.body ?? document.documentElement)?.scrollHeight ?? 0)")
         page.waitForTimeout(1500.0)
         preprocessPage()
     }.getOrElse { e ->

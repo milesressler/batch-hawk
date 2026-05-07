@@ -19,8 +19,10 @@ import {
   IconPencil,
   IconPlus,
   IconEye,
+  IconPackages,
 } from '@tabler/icons-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import {
   listRoasters,
@@ -185,6 +187,11 @@ export function RoastersPage() {
                 </Table.Td>
                 <Table.Td>
                   <Group gap="xs">
+                    <Tooltip label="View products">
+                      <ActionIcon variant="subtle" color="teal" component={Link} to={`/roasters/${r.id}/products`}>
+                        <IconPackages size={16} />
+                      </ActionIcon>
+                    </Tooltip>
                     <Tooltip label="Edit">
                       <ActionIcon variant="subtle" onClick={() => openEdit(r)}>
                         <IconPencil size={16} />

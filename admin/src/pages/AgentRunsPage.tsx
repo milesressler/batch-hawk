@@ -61,7 +61,7 @@ export function AgentRunsPage() {
               <Table.Td>
                 <Text
                   component={Link}
-                  to="/"
+                  to={`/runs/${run.id}`}
                   size="sm"
                   fw={500}
                   style={{ textDecoration: 'none', color: 'inherit' }}

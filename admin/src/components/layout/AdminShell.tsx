@@ -1,5 +1,5 @@
 import { AppShell, Button, Group, NavLink, Text } from '@mantine/core';
-import { IconList, IconRefresh } from '@tabler/icons-react';
+import { IconDashboard, IconList, IconRefresh } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 
@@ -24,16 +24,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <NavLink
           component={Link}
           to="/"
+          label="Dashboard"
+          leftSection={<IconDashboard size={16} />}
+          active={pathname === '/'}
+        />
+        <NavLink
+          component={Link}
+          to="/roasters"
           label="Roasters"
           leftSection={<IconList size={16} />}
-          active={pathname === '/'}
+          active={pathname === '/roasters'}
         />
         <NavLink
           component={Link}
           to="/runs"
           label="Agent Runs"
           leftSection={<IconRefresh size={16} />}
-          active={pathname === '/runs'}
+          active={pathname.startsWith('/runs')}
         />
       </AppShell.Navbar>
       <AppShell.Main>

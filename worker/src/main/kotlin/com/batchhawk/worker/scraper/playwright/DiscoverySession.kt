@@ -205,6 +205,16 @@ class DiscoverySession(
             Selector rules: use standard CSS selectors only — :contains() is not valid.
         """.trimIndent())
 
+        if (job.integrationType == "SQUARE") {
+            appendLine()
+            appendLine("""
+                Platform note: this is a Square Online store (powered by Weebly/editmysite.com).
+                The page is a JavaScript SPA — content loads after the initial HTML, so extract_links may return empty on the first call.
+                If extract_links returns [] on a page that should have products, try scroll_to_bottom followed by another extract_links call.
+                Product URLs on Square Online typically contain /l/ (e.g. /l/product-name) or are under a /store/ path.
+            """.trimIndent())
+        }
+
         job.urlHints?.let { hints ->
             appendLine("\nKnown site structure — go directly to known pages, skip discovery:")
             appendLine(hints)

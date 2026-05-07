@@ -4,10 +4,11 @@ import com.batchhawk.data.repository.AgentRunRepository;
 import com.batchhawk.data.response.AgentRunResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.web.PageableDefault;
@@ -25,5 +26,13 @@ public class AdminAgentRunController {
         @PageableDefault(size = 25, sort = "startedAt", direction = Sort.Direction.DESC) final Pageable pageable
     ) {
         return agentRunRepository.findRecentRuns(pageable).map(AgentRunResponse::from);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AgentRunResponse> get(@PathVariable final Long id) {
+        return agentRunRepository.findById(id)
+            .map(AgentRunResponse::from)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 }

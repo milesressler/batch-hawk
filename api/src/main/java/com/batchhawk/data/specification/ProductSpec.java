@@ -29,19 +29,23 @@ public class ProductSpec {
     }
 
     public static Specification<Product> roastLevelIn(final List<String> values) {
-        return (root, query, cb) -> root.get("roastLevel").in(values);
+        return (root, query, cb) -> cb.lower(root.get("roastLevel")).in(lowercase(values));
     }
 
     public static Specification<Product> processIn(final List<String> values) {
-        return (root, query, cb) -> root.get("process").in(values);
+        return (root, query, cb) -> cb.lower(root.get("process")).in(lowercase(values));
     }
 
     public static Specification<Product> productTypeIn(final List<String> values) {
-        return (root, query, cb) -> root.get("productType").in(values);
+        return (root, query, cb) -> cb.lower(root.get("productType")).in(lowercase(values));
     }
 
     public static Specification<Product> availabilityTypeIn(final List<String> values) {
-        return (root, query, cb) -> root.get("availabilityType").in(values);
+        return (root, query, cb) -> cb.lower(root.get("availabilityType")).in(lowercase(values));
+    }
+
+    private static List<String> lowercase(final List<String> values) {
+        return values.stream().map(String::toLowerCase).toList();
     }
 
     public static Specification<Product> isDecaf() {

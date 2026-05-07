@@ -196,6 +196,15 @@ class ProductDetailSession(
                 Therefore: when you see a size dropdown, ALWAYS set "sizeSelectIndex" — never populate "variants" from option labels on this platform.
             """.trimIndent())
         }
+        if (integrationType == "SQUARE") {
+            appendLine()
+            appendLine("""
+                Platform note: this is a Square Online store.
+                Square Online uses dynamic pricing — prices update when size or variant options are selected.
+                Size dropdown options contain ONLY size labels with NO prices embedded in the option text.
+                Therefore: when you see a size dropdown, ALWAYS set "sizeSelectIndex" — never populate "variants" from option labels on this platform.
+            """.trimIndent())
+        }
     }
 
     private fun extractJson(text: String): String {
