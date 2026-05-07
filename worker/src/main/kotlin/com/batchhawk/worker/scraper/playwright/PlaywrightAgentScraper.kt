@@ -4,6 +4,7 @@ import com.anthropic.client.AnthropicClient
 import com.batchhawk.common.CompleteRunRequest
 import com.batchhawk.common.NextJobResponse
 import com.batchhawk.worker.config.WorkerProperties
+import com.batchhawk.worker.scraper.ProductCleanupService
 import com.batchhawk.worker.scraper.RoasterScraper
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
@@ -16,6 +17,7 @@ class PlaywrightAgentScraper(
     private val anthropicClient: AnthropicClient,
     private val workerProperties: WorkerProperties,
     private val objectMapper: ObjectMapper,
+    private val cleanupService: ProductCleanupService,
 ) : RoasterScraper {
 
     private val log = LoggerFactory.getLogger(PlaywrightAgentScraper::class.java)
@@ -30,7 +32,7 @@ class PlaywrightAgentScraper(
         return browserManager.withContext { context ->
             // Stage 1: discover product URLs
             val discoveryPage = context.newPage()
-            val discoveryTools = BrowserTools(discoveryPage, allowedDomain, workerProperties.scraping, objectMapper)
+            val discoveryTools = BrowserTools(discoveryPage, allowedDomain, workerProperties.scraping, objectMapper, job.integrationType)
             val discoverySession = DiscoverySession(anthropicClient, discoveryTools, workerProperties.scraping, job)
             val discovery = discoverySession.run()
             discoveryPage.close()
@@ -54,7 +56,7 @@ class PlaywrightAgentScraper(
 
             val products = discovery.products.mapNotNull { discovered ->
                 val detailPage = context.newPage()
-                val detailTools = BrowserTools(detailPage, allowedDomain, workerProperties.scraping, objectMapper)
+                val detailTools = BrowserTools(detailPage, allowedDomain, workerProperties.scraping, objectMapper, job.integrationType)
                 val detailSession = ProductDetailSession(anthropicClient, detailTools, workerProperties.scraping, objectMapper, job.integrationType)
                 val result = runCatching { detailSession.extract(discovered) }.getOrElse { e ->
                     log.warn("Detail extraction failed for {}: {}", discovered.url, e.message)
@@ -68,10 +70,12 @@ class PlaywrightAgentScraper(
 
             log.info("Extraction complete: {}/{} products succeeded", products.size, discovery.products.size)
 
+            val cleanedProducts = cleanupService.clean(products)
+
             CompleteRunRequest(
                 status = "SUCCESS",
-                products = products,
-                notes = "Scraped ${products.size} products (${discovery.products.size} discovered)",
+                products = cleanedProducts,
+                notes = "Scraped ${cleanedProducts.size} products (${discovery.products.size} discovered, ${products.size} extracted)",
                 siteHints = discovery.siteHintsJson,
                 inputTokens = totalInputTokens,
                 outputTokens = totalOutputTokens,

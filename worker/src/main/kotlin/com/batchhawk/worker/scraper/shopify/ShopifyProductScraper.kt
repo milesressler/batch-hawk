@@ -2,6 +2,7 @@ package com.batchhawk.worker.scraper.shopify
 
 import com.batchhawk.common.CompleteRunRequest
 import com.batchhawk.common.NextJobResponse
+import com.batchhawk.worker.scraper.ProductCleanupService
 import com.batchhawk.worker.scraper.RoasterScraper
 import com.batchhawk.worker.scraper.playwright.PlaywrightAgentScraper
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ class ShopifyProductScraper(
     private val llmExtractor: ShopifyLlmExtractor,
     private val roasterInfoExtractor: RoasterInfoExtractor,
     private val playwrightScraper: PlaywrightAgentScraper,
+    private val cleanupService: ProductCleanupService,
 ) : RoasterScraper {
 
     private val log = LoggerFactory.getLogger(ShopifyProductScraper::class.java)
@@ -43,12 +45,14 @@ class ShopifyProductScraper(
         val extracted = llmExtractor.extract(slim, baseUrl)
         log.info("LLM extracted {} coffee products from {}", extracted.size, baseUrl)
 
+        val cleaned = cleanupService.clean(extracted)
+
 //        val roasterUpdate = roasterInfoExtractor.extract(baseUrl)
 
         return CompleteRunRequest(
             status = "SUCCESS",
-            products = extracted,
-            notes = "Extracted ${extracted.size} coffee products from ${slim.size} raw Shopify products",
+            products = cleaned,
+            notes = "Extracted ${cleaned.size} coffee products from ${slim.size} raw Shopify products (${extracted.size} before cleanup)",
             roasterUpdate = null,
         )
     }
