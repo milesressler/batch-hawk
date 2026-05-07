@@ -1,6 +1,7 @@
 CREATE TABLE promos (
-    id             UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    roaster_id     UUID         NOT NULL REFERENCES roasters(id),
+    id             BIGSERIAL    NOT NULL PRIMARY KEY,
+    uuid           UUID         NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    roaster_id     BIGINT       NOT NULL REFERENCES roasters(id),
     code           VARCHAR(100) NOT NULL,
     discount_type  VARCHAR(30)  NOT NULL,
     discount_value NUMERIC(8,2),

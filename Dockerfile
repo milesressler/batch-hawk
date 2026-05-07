@@ -1,4 +1,4 @@
-FROM public.ecr.aws/amazoncorretto/amazoncorretto:25
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:21
 COPY api/build/libs/batch-hawk-*.jar /opt/batchhawk/batch-hawk.jar
 EXPOSE 8080
 WORKDIR /opt/batchhawk

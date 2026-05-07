@@ -1,8 +1,8 @@
 package com.batchhawk.data.entity.observation;
 
 import com.batchhawk.data.entity.BaseEntity;
+import com.batchhawk.data.entity.agent.AgentRun;
 import com.batchhawk.data.entity.product.Product;
-import com.batchhawk.data.enums.ValueTier;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -25,6 +24,12 @@ public class ProductObservation extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(name = "bag_size")
+    private Integer bagSize;
+
+    @Column(name = "bag_size_unit", length = 10)
+    private String bagSizeUnit;
+
     @Column(name = "bag_size_oz", precision = 6, scale = 2)
     private BigDecimal bagSizeOz;
 
@@ -34,16 +39,13 @@ public class ProductObservation extends BaseEntity {
     @Column(name = "price_per_oz", precision = 8, scale = 4)
     private BigDecimal pricePerOz;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "value_tier", length = 20)
-    private ValueTier valueTier;
-
     @Column(name = "in_stock")
     private Boolean inStock;
 
     @Column(name = "observed_at", nullable = false)
     private Instant observedAt;
 
-    @Column(name = "agent_run_id")
-    private UUID agentRunId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agent_run_id")
+    private AgentRun agentRun;
 }

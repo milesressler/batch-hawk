@@ -14,6 +14,9 @@ public record RoasterResponse(
     @Schema(requiredMode = REQUIRED) String name,
     String websiteUrl,
     String emailListUrl,
+    String city,
+    String state,
+    String logoUrl,
     @Schema(requiredMode = REQUIRED) boolean active,
     @Schema(requiredMode = REQUIRED) ModerationStatus moderationStatus,
     @Schema(requiredMode = REQUIRED) Instant createdAt,
@@ -21,10 +24,13 @@ public record RoasterResponse(
 ) {
     public static RoasterResponse from(final Roaster r) {
         return new RoasterResponse(
-            r.getId(),
+            r.getUuid(),
             r.getName(),
             r.getWebsiteUrl(),
             r.getEmailListUrl(),
+            r.getCity(),
+            r.getState(),
+            r.getLogoUrl(),
             r.isActive(),
             r.getModerationStatus(),
             r.getCreatedAt(),

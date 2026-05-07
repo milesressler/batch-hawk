@@ -1,6 +1,8 @@
 plugins {
     id 'org.springframework.boot' version '4.0.6' apply false
     id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.jetbrains.kotlin.jvm' version '2.1.20' apply false
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.1.20' apply false
 }
 
 subprojects {
@@ -11,7 +13,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(25)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
 

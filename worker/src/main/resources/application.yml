@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: batch-hawk-worker
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: batch-hawk-worker
+            client-secret: ${WORKER_CLIENT_SECRET:worker-local-secret}
+            authorization-grant-type: client_credentials
+            scope: openid
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/batchhawk}
+
+logging:
+  level:
+    com.batchhawk.worker.scraper.playwright: DEBUG
+
+batchhawk:
+  worker:
+    api-base-url: ${WORKER_API_BASE_URL:http://localhost:8080}
+    poll-interval-seconds: 600
+    refresh-interval-hours: 24
+    max-run-minutes: 10
+    scraping:
+      max-turns: 12
+      navigation-timeout-ms: 15000
+      page-text-max-chars: 12000
+      max-links: 50
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+batchhawk:
+  worker:
+    poll-interval-seconds: 25

@@ -1,7 +1,8 @@
 CREATE TABLE user_saves (
-    id         UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id    UUID        NOT NULL REFERENCES app_users(id),
-    product_id UUID        NOT NULL REFERENCES products(id),
+    id         BIGSERIAL   NOT NULL PRIMARY KEY,
+    uuid       UUID        NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    user_id    BIGINT      NOT NULL REFERENCES app_users(id),
+    product_id BIGINT      NOT NULL REFERENCES products(id),
     saved_at   TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,

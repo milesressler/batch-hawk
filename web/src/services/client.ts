@@ -7,7 +7,7 @@ const client = createClient<paths>({
 
 let getToken: (() => Promise<string>) | null = null;
 
-export const setTokenGetter = (fn: () => Promise<string>) => {
+export const setTokenGetter = (fn: (() => Promise<string>) | null) => {
   getToken = fn;
 };
 

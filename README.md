@@ -16,7 +16,7 @@ Specialty craft goods price & discovery app.
 
 ### Prerequisites
 
-- Java 25+
+- Java 21+
 - Docker
 - Docker Compose
 

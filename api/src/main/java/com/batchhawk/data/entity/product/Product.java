@@ -59,4 +59,13 @@ public class Product extends BaseEntity {
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "product_url", length = 1000)
+    private String productUrl;
+
+    @Column(name = "external_product_id", length = 255)
+    private String externalProductId;
+
+    @Column(name = "offers_grinding", nullable = false)
+    private boolean offersGrinding = false;
 }

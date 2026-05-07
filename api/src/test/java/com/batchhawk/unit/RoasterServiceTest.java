@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,22 +33,24 @@ class RoasterServiceTest {
     @Test
     void getById_returnsMappedResponse_whenFound() {
         final var roaster = roaster("Onyx Coffee Lab");
-        when(roasterRepository.findById(roaster.getId())).thenReturn(Optional.of(roaster));
+        final var uuid = UUID.randomUUID();
+        ReflectionTestUtils.setField(roaster, "uuid", uuid);
+        when(roasterRepository.findByUuid(uuid)).thenReturn(Optional.of(roaster));
 
-        final var response = roasterService.getById(roaster.getId());
+        final var response = roasterService.getById(uuid);
 
         assertThat(response.name()).isEqualTo("Onyx Coffee Lab");
-        assertThat(response.id()).isEqualTo(roaster.getId());
+        assertThat(response.id()).isEqualTo(uuid);
     }
 
     @Test
     void getById_throwsEntityNotFoundException_whenNotFound() {
-        final var id = UUID.randomUUID();
-        when(roasterRepository.findById(id)).thenReturn(Optional.empty());
+        final var uuid = UUID.randomUUID();
+        when(roasterRepository.findByUuid(uuid)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> roasterService.getById(id))
+        assertThatThrownBy(() -> roasterService.getById(uuid))
             .isInstanceOf(EntityNotFoundException.class)
-            .hasMessageContaining(id.toString());
+            .hasMessageContaining(uuid.toString());
     }
 
     @Test

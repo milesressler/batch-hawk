@@ -78,9 +78,9 @@ class RoasterControllerIT extends BaseIntegrationTest {
     void getRoaster_returnsRoaster_whenFound() throws Exception {
         final var roaster = saveRoaster("Onyx Coffee Lab", true);
 
-        mockMvc.perform(get("/api/roasters/{id}", roaster.getId()).with(jwt()))
+        mockMvc.perform(get("/api/roasters/{id}", roaster.getUuid()).with(jwt()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(roaster.getId().toString()))
+            .andExpect(jsonPath("$.id").value(roaster.getUuid().toString()))
             .andExpect(jsonPath("$.name").value("Onyx Coffee Lab"));
     }
 

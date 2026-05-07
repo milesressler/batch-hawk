@@ -50,7 +50,7 @@ Concurrency: a unique partial index on `agent_runs (roaster_id) WHERE status = '
 ```yaml
 batchhawk:
   worker:
-    poll-interval-minutes: 15
+    poll-interval-seconds: 15
     refresh-interval-hours: 24
     max-run-minutes: 10
     max-consecutive-failures: 3   # alert threshold

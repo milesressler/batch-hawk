@@ -17,12 +17,20 @@ tasks.named('forkedSpringBootRun') {
     dependsOn testClasses
 }
 
+tasks.named('build') {
+    finalizedBy 'generateClientTypes'
+}
+
 tasks.register('generateClientTypes', Exec) {
     group = 'openapi'
     description = 'Generates TypeScript API types from the OpenAPI spec'
     dependsOn 'generateOpenApiDocs'
     workingDir = file("${rootDir}/web")
     commandLine 'npm', 'run', 'generate:api'
+}
+
+bootRun {
+    jvmArgs = ['-Dspring.profiles.active=dev']
 }
 
 bootJar {
@@ -35,6 +43,9 @@ ext {
 }
 
 dependencies {
+    implementation project(':common')
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

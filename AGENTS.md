@@ -5,7 +5,9 @@
 
 ## Design Document
 
-`batchhawk_design_review.docx` lives at the repo root and is the primary source of truth for product goals, domain model, and feature scope. It is excluded from git (`.gitignore` covers `*.docx`) — keep it local. When making architectural or feature decisions, consult it first.
+`private/design-doc.md` is the primary source of truth for product goals, domain model, and feature scope. It is excluded from git (`.gitignore` covers `private/`) — keep it local. When making architectural or feature decisions, consult it first.
+
+When a decision is made that resolves an open question, changes the data model, adds a feature, or alters the architecture, update `private/design-doc.md` to reflect it — move resolved items to the RESOLVED section in §4, update the relevant schema or architecture section, and bump the version number in the header.
 
 ## Project Overview
 
@@ -15,13 +17,13 @@ Batch Hawk is a specialty craft goods price-discovery and browsing app. It is a 
 
 ```
 batch-hawk/
-├── api/          # Spring Boot REST API (active — primary module)
-├── worker/       # Spring Boot scraping/AI agent (placeholder, not yet active)
-├── web/          # React + TypeScript frontend (placeholder)
+├── api/          # Spring Boot REST API (active)
+├── worker/       # Spring Boot scraping/AI agent (active)
+├── common/       # Shared DTOs between api/ and worker/ (active)
+├── web/          # React + TypeScript frontend (active)
 ├── infra/        # Terraform (ECS, RDS, SES, SQS, S3, IAM) (placeholder)
-├── shared/       # Shared domain models (placeholder)
 ├── agents/       # Agent decision records and guidance docs
-├── Dockerfile    # Builds api/ jar into Corretto 25 image
+├── Dockerfile    # Builds api/ jar into Corretto 21 image
 ├── buildspec.yml # AWS CodeBuild pipeline (ECR push)
 └── compose.yaml
 ```
@@ -29,7 +31,7 @@ batch-hawk/
 ## Tech Stack
 
 ### api/ (Spring Boot)
-- **Language:** Java 25
+- **Language:** Java 21
 - **Framework:** Spring Boot 4.0.6
 - **Build:** Gradle 9.x (multi-module)
 - **Database:** PostgreSQL via Spring Data JPA + Flyway migrations
@@ -61,7 +63,84 @@ Spring Boot (`spring-boot-docker-compose`) auto-starts `compose.yaml` on boot an
 ### CI/CD
 - `buildspec.yml` — AWS CodeBuild. Requires `REPOSITORY_URI` env var set in the CodeBuild project pointing to the ECR repo.
 - Builds `./gradlew :api:build :api:bootJar`, produces `api/build/libs/batch-hawk-{version}.jar`
-- Docker image uses `public.ecr.aws/amazoncorretto/amazoncorretto:25`
+- Docker image uses `public.ecr.aws/amazoncorretto/amazoncorretto:21`
+
+### worker/ (Spring Boot — Kotlin)
+- **Language:** Kotlin (JVM 21)
+- **Framework:** Spring Boot, scheduled polling via `@Scheduled`
+- **Build:** Gradle, included in multi-module build
+- **Browser automation:** Microsoft Playwright (`com.microsoft.playwright:playwright:1.51.0`) — singleton `Playwright` + `Browser` beans, one `BrowserContext` per scraping session
+- **LLM:** Anthropic Java SDK (`com.anthropic:anthropic-java:2.17.0`) — Claude Haiku for scraping sessions
+- **Root package:** `com.batchhawk.worker`
+- **Key commands:**
+  ```bash
+  ./gradlew :worker:bootRun    # run locally
+  ./gradlew :worker:build      # compile + test
+  ```
+
+#### Worker Architecture
+
+```
+WorkerPoller (polls API every N seconds)
+  → claims NextJobResponse (runId, websiteUrl, integrationType, urlHints)
+  → dispatches to RoasterScraper by integrationType name
+      SHOPIFY  → ShopifyProductScraper
+      CUSTOM   → PlaywrightAgentScraper (also used as fallback)
+  → calls completeRun with CompleteRunRequest
+```
+
+#### Playwright Scraper Components
+
+| Class | Role |
+|---|---|
+| `PlaywrightConfig` | `@Configuration` — singleton `Playwright` + `Browser` beans, `@PreDestroy` shutdown |
+| `BrowserManager` | Single-permit `Semaphore` wrapping `Browser`; `withContext { BrowserContext -> T }` creates/closes context per session |
+| `BrowserTools` | Executes all 7 scraping tools against a `Page`; owns preprocessing and `TerminalResult` |
+| `ScrapingToolDefinitions` | Defines tool schemas as `List<Tool>` |
+| `ScraperAgentSession` | Drives the Claude Haiku agentic loop; accumulates token counts; builds `CompleteRunRequest` |
+| `PlaywrightAgentScraper` | `@Component("CUSTOM")` entry point; wires `BrowserTools` + `ScraperAgentSession` inside a `BrowserManager.withContext` block |
+
+**Tools:** `navigate`, `get_page_content`, `click`, `scroll_to_bottom`, `extract_links`, `return_products`, `report_failure`
+
+**Page preprocessing:** strips scripts/styles/nav/footer/cookie banners → plain text → truncated to `pageTextMaxChars` (config)
+
+#### Site Hints (Forward Context)
+
+Each roaster has a `url_hints` JSONB column (`producers` table). After a successful scrape, discovered site structure is written back and returned on the next job:
+
+```json
+{
+  "productListingUrls": ["/product-category/coffee/"],
+  "paginationType": "paged_param",
+  "paginationParam": "paged",
+  "requiresDetailPage": true,
+  "platformType": "woocommerce",
+  "failedStrategies": ["?page=N"]
+}
+```
+
+The agent prompt includes these hints on repeat runs to skip discovery and go straight to known pages.
+
+#### Scraping Config (`batchhawk.worker.scraping`)
+
+| Key | Default | Purpose |
+|---|---|---|
+| `max-turns` | 12 | Hard cap on agentic loop turns |
+| `navigation-timeout-ms` | 15000 | Playwright navigate + click timeout |
+| `page-text-max-chars` | 12000 | Preprocessed page text truncation |
+| `max-links` | 50 | Max results from `extract_links` |
+
+#### Token Tracking
+
+`ScraperAgentSession` accumulates `inputTokens` + `outputTokens` across all turns and includes them in `CompleteRunRequest`. The API writes these to `agent_runs.input_tokens` / `agent_runs.output_tokens`.
+
+## Research Conventions
+
+- **Never inspect dependency JARs** to learn SDK APIs (e.g., `jar tf`, `javap`). Use web search, official documentation, or read existing usages in the codebase instead.
+
+## Kotlin Conventions
+
+- **No wildcard imports:** Always use explicit imports (`import com.foo.Bar`), never `import com.foo.*`.
 
 ## Development Conventions
 
@@ -106,10 +185,7 @@ Always commit the updated `api-types.ts` alongside the API change. `openapi.json
 cd web && npm install && npm run dev    # dev server at http://localhost:5173
 ```
 
-Add `web/.env.local`:
-```
-VITE_API_BASE_URL=http://localhost:8080
-```
+No `.env.local` needed for local dev — `vite.config.ts` proxies `/api/*` to `http://localhost:8080` automatically. In production, set `VITE_API_BASE_URL` to the actual API origin.
 
 Key files:
 - `web/src/services/client.ts` — openapi-fetch typed client; call `setTokenGetter()` once Keycloak auth is wired in the frontend
@@ -129,3 +205,20 @@ The `api` module is the active focus. High-level priorities (update as these evo
 7. Provision infrastructure via `infra/` (Terraform on AWS: ECS, RDS, SES, SQS, S3)
 
 See `agents/` for decision records and module-specific guidance as they are added.
+
+## Active Plans
+
+`agents/plans/` acts as a living task board — one file per in-progress effort. Each plan tracks goal, architecture decisions, task checklist (with completion status), and open questions.
+
+**When working on a feature or module:**
+- Check `agents/plans/` for an existing plan before starting
+- Mark tasks `[x]` as they are completed
+- Move finished items to the **Completed** section
+- Add new open questions or follow-up work as they surface
+- Update architecture notes if decisions change during implementation
+
+Current plans:
+- [`agents/plans/playwright-two-stage-scraper.md`](agents/plans/playwright-two-stage-scraper.md) — Refactor Playwright scraper into discovery + per-product detail stages
+- [`agents/plans/data-model-cleanup.md`](agents/plans/data-model-cleanup.md) — Remove FieldObservation, clean up AgentRun fields, fix ProductObservation FK
+- [`agents/plans/product-identity.md`](agents/plans/product-identity.md) — Product URL, deduplication, lastRefreshedAt, inactive product handling
+- [`agents/plans/scraping-strategy.md`](agents/plans/scraping-strategy.md) — IntegrationType vs. scraping mechanism, Playwright as fallback not a type

@@ -1,5 +1,5 @@
 rootProject.name = 'batch-hawk'
 
 include 'api'
-// include 'worker'
-// include 'shared'
+include 'worker'
+include 'common'

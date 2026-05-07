@@ -53,7 +53,7 @@ class ProductControllerIT extends BaseIntegrationTest {
         saveProduct("Ethiopia Guji", true);
         saveProductFor(other, "Toscano Blend", true);
 
-        mockMvc.perform(get("/api/products?roasterId={id}", roaster.getId()).with(jwt()))
+        mockMvc.perform(get("/api/products?roasterId={id}", roaster.getUuid()).with(jwt()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalElements").value(1))
             .andExpect(jsonPath("$.content[0].name").value("Ethiopia Guji"));
@@ -77,7 +77,7 @@ class ProductControllerIT extends BaseIntegrationTest {
         saveProduct("Colombia Huila", true);
         saveProductFor(other, "Ethiopia Yirgacheffe", true);
 
-        mockMvc.perform(get("/api/products?roasterId={id}&name=ethiopia", roaster.getId()).with(jwt()))
+        mockMvc.perform(get("/api/products?roasterId={id}&name=ethiopia", roaster.getUuid()).with(jwt()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalElements").value(1))
             .andExpect(jsonPath("$.content[0].name").value("Ethiopia Guji"));
@@ -106,9 +106,9 @@ class ProductControllerIT extends BaseIntegrationTest {
     void getProduct_returnsProduct_whenFound() throws Exception {
         final var product = saveProduct("Ethiopia Guji", true);
 
-        mockMvc.perform(get("/api/products/{id}", product.getId()).with(jwt()))
+        mockMvc.perform(get("/api/products/{id}", product.getUuid()).with(jwt()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(product.getId().toString()))
+            .andExpect(jsonPath("$.id").value(product.getUuid().toString()))
             .andExpect(jsonPath("$.name").value("Ethiopia Guji"))
             .andExpect(jsonPath("$.roastLevel").value("light"))
             .andExpect(jsonPath("$.flavorProfile", hasItem("blueberry")))

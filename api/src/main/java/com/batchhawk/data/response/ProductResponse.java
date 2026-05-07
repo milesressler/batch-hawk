@@ -1,5 +1,6 @@
 package com.batchhawk.data.response;
 
+import com.batchhawk.data.entity.observation.ProductObservation;
 import com.batchhawk.data.entity.product.Product;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -21,15 +22,18 @@ public record ProductResponse(
     List<String> brewMethods,
     List<String> flavorProfile,
     @Schema(requiredMode = REQUIRED) boolean decaf,
+    @Schema(requiredMode = REQUIRED) boolean offersGrinding,
     String availabilityType,
     String description,
+    String productUrl,
     @Schema(requiredMode = REQUIRED) boolean active,
     @Schema(requiredMode = REQUIRED) Instant createdAt,
-    @Schema(requiredMode = REQUIRED) Instant updatedAt
+    @Schema(requiredMode = REQUIRED) Instant updatedAt,
+    @Schema(requiredMode = REQUIRED) List<ProductObservationResponse> variants
 ) {
-    public static ProductResponse from(final Product p) {
+    public static ProductResponse from(final Product p, final List<ProductObservation> variants) {
         return new ProductResponse(
-            p.getId(),
+            p.getUuid(),
             RoasterResponse.from(p.getRoaster()),
             p.getName(),
             p.getRoastLevel(),
@@ -40,11 +44,14 @@ public record ProductResponse(
             p.getBrewMethods(),
             p.getFlavorProfile(),
             p.isDecaf(),
+            p.isOffersGrinding(),
             p.getAvailabilityType(),
             p.getDescription(),
+            p.getProductUrl(),
             p.isActive(),
             p.getCreatedAt(),
-            p.getUpdatedAt()
+            p.getUpdatedAt(),
+            variants.stream().map(ProductObservationResponse::from).toList()
         );
     }
 }

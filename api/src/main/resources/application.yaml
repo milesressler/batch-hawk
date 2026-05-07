@@ -1,17 +1,24 @@
 spring:
   application:
     name: batch-hawk
+  flyway:
+    out-of-order: true
+
+logging:
+  pattern:
+    level: "%5p"
   jpa:
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
-  flyway:
-    out-of-order: true
+  web:
+    error:
+      include-stacktrace: never
 
-server:
-  error:
-    include-stacktrace: never
+batchhawk:
+  refresh-interval-hours: 72
+  max-run-minutes: 10
 
 management:
   endpoints:
@@ -28,9 +35,14 @@ spring:
   docker:
     compose:
       file: ../compose.yaml
+      lifecycle-management: start-only
   jpa:
     hibernate:
       ddl-auto: validate
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/migration/dev
   security:
     oauth2:
       resourceserver:

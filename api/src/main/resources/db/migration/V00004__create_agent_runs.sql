@@ -1,6 +1,7 @@
 CREATE TABLE agent_runs (
-    id               UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    roaster_id       UUID        NOT NULL REFERENCES roasters(id),
+    id               BIGSERIAL   NOT NULL PRIMARY KEY,
+    uuid             UUID        NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+    roaster_id       BIGINT      NOT NULL REFERENCES roasters(id),
     started_at       TIMESTAMPTZ NOT NULL,
     completed_at     TIMESTAMPTZ,
     status           VARCHAR(20),
