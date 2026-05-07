@@ -5,11 +5,63 @@
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": true,
+  "roles": {
+    "client": {
+      "batch-hawk-admin": [
+        {
+          "name": "admin",
+          "description": "Admin access to Batch Hawk management endpoints"
+        }
+      ]
+    }
+  },
+  "defaultDefaultClientScopes": [
+    "roles",
+    "profile",
+    "email",
+    "web-origins",
+    "openid"
+  ],
   "clientScopes": [
     {
       "name": "worker",
       "description": "Scope for internal worker service \u2014 grants access to /internal/** endpoints",
       "protocol": "openid-connect"
+    },
+    {
+      "name": "roles",
+      "description": "OpenID Connect scope for add user roles to the access token",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
     }
   ],
   "clients": [
@@ -43,6 +95,46 @@
         "http://localhost:5173",
         "http://localhost:8080"
       ]
+    },
+    {
+      "clientId": "batch-hawk-admin",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5174/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5174"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles",
+        "web-origins"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "mressler",
+      "firstName": "Miles",
+      "lastName": "Ressler",
+      "email": "milesressler@gmail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "batchhawk",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "batch-hawk-admin": ["admin"]
+      }
     }
   ],
   "loginTheme": "batchhawk"

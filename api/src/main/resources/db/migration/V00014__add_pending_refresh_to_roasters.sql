@@ -1,0 +1,1 @@
+ALTER TABLE roasters ADD COLUMN pending_refresh boolean NOT NULL DEFAULT false;

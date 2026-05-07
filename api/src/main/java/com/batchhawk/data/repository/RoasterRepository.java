@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,11 +27,10 @@ public interface RoasterRepository extends JpaRepository<Roaster, Long>, JpaSpec
           AND r.moderation_status = 'APPROVED'
           AND NOT EXISTS (
               SELECT 1 FROM agent_runs ar
-              WHERE ar.roaster_id = r.id AND ar.status = 'IN_PROGRESS'
+              WHERE ar.roaster_id = r.id AND ar.status IN ('PENDING', 'IN_PROGRESS')
           )
-          AND (last_run.last_completed IS NULL OR last_run.last_completed < :cutoff)
-        ORDER BY last_run.last_completed ASC NULLS FIRST
-        LIMIT 1
+          AND (r.pending_refresh = true OR last_run.last_completed IS NULL OR last_run.last_completed < :cutoff)
+        ORDER BY r.pending_refresh DESC, last_run.last_completed ASC NULLS FIRST
         """, nativeQuery = true)
-    Optional<Roaster> findNextDueForRefresh(@Param("cutoff") Instant cutoff);
+    List<Roaster> findAllDueForScheduling(@Param("cutoff") Instant cutoff);
 }

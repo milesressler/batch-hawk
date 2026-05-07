@@ -54,4 +54,7 @@ public class Roaster extends BaseEntity {
 
     @Column(name = "logo_url", length = 512)
     private String logoUrl;
+
+    @Column(name = "pending_refresh", nullable = false)
+    private boolean pendingRefresh = false;
 }
