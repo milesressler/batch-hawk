@@ -1,5 +1,6 @@
 package com.batchhawk.controller;
 
+import com.batchhawk.data.request.AdminRoasterRequest;
 import com.batchhawk.data.response.AdminRoasterResponse;
 import com.batchhawk.service.AdminRoasterService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,17 @@ public class AdminRoasterController {
     @GetMapping
     public List<AdminRoasterResponse> list() {
         return adminRoasterService.listAll();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public AdminRoasterResponse create(@RequestBody final AdminRoasterRequest request) {
+        return adminRoasterService.create(request);
+    }
+
+    @PatchMapping("/{id}")
+    public AdminRoasterResponse update(@PathVariable final UUID id, @RequestBody final AdminRoasterRequest request) {
+        return adminRoasterService.update(id, request);
     }
 
     @PostMapping("/{id}/trigger")

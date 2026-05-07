@@ -3,6 +3,8 @@ package com.batchhawk.data.repository;
 import com.batchhawk.data.entity.agent.AgentRun;
 import com.batchhawk.data.entity.roaster.Roaster;
 import com.batchhawk.data.enums.AgentRunStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,4 +27,10 @@ public interface AgentRunRepository extends JpaRepository<AgentRun, Long> {
     List<AgentRun> findByStatusAndStartedAtBefore(
             @Param("status") AgentRunStatus status,
             @Param("cutoff") Instant cutoff);
+
+    @Query(
+        value = "SELECT ar FROM AgentRun ar JOIN FETCH ar.roaster",
+        countQuery = "SELECT COUNT(ar) FROM AgentRun ar"
+    )
+    Page<AgentRun> findRecentRuns(Pageable pageable);
 }
